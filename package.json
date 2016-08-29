@@ -1,0 +1,32 @@
+{
+  "name": "datejs",
+  "version": "1.0.0",
+  "description": "javascript Date Object extend",
+  "main": "date.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zbm2001/datajs.git"
+  },
+  "keywords": [
+    "datejs",
+    "js",
+    "javascript",
+    "date",
+    "prototype",
+    "extend"
+  ],
+  "author": "zbm2001@aliyun.com",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/zbm2001/datajs/issues"
+  },
+  "homepage": "https://github.com/zbm2001/datajs#readme",
+  "devDependencies": {
+    "rollup": "^0.34.10",
+    "rollup-plugin-buble": "^0.13.0",
+    "rollup-plugin-uglify": "^1.0.1"
+  }
+}
