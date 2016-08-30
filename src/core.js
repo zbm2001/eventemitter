@@ -1,5 +1,7 @@
 import './util/assign';
 import typeOf from './util/typeOf';
+import create from './util/create';
+import Event from 'Event';
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -33,7 +35,8 @@ function indexOfListener(listeners, listener) {
 }
 
 /**
- * 运行时用一个方法绑定this上下文并执行
+ * 通过指定的对象方法名生成别名函数
+ * 运行时闭包函数引用指定的方法绑定this上下文并执行
  *
  * @param {String} name 原方法名
  * @return {Function} 返回闭包函数
@@ -42,11 +45,10 @@ function indexOfListener(listeners, listener) {
 function alias(name) {
   return function aliasClosure() {
     return this[name].apply(this, arguments);
-  };
-  this[name].bind(this);
+  }
 }
 
-extend(EventEmitter.prototype, {
+Object.assign(EventEmitter.prototype, {
 
   /**
    * 添加一个侦听器到定义的事件侦听存储队列中
@@ -54,7 +56,7 @@ extend(EventEmitter.prototype, {
    * If the listener returns true then it will be removed after it is called.
    * If you pass a regular expression as the event name then the listener will be added to all events that match it.
    *
-   * @param {String|RegExp} evt Name of the event to attach the listener to.
+   * @param {String|RegExp} evt 事件名称
    * @param {Function|Object} listener Method to be called when the event is emitted. If the function returns true then it will be removed after calling.
    * @return {Object} Current instance of EventEmitter for chaining.
    */
@@ -153,20 +155,21 @@ extend(EventEmitter.prototype, {
     return this;
 
     function wrapListenerArgs() {
+      var listener;
       j = l = listenerArgs.length;
       outer: while (j--) {
-        if (listenerArgs[j]) {
-          switch (typeof listenerArgs[j]) {
+        if (listener = listenerArgs[j]) {
+          switch (typeof listener) {
             case 'function':
               listenerArgs[j] = {
-                handleEvent: listenerArgs[j],
+                handleEvent: listener,
                 once: false
               };
               continue outer;
 
             case 'object':
               listenerArgs[j] = {
-                listener: listenerArgs[j],
+                listener: listener.listener,
                 once: false
               };
               continue outer;
@@ -596,79 +599,6 @@ function inherito(constructor, props) {
     .constructor = constructor;
   // 静态成员继承
   extend(constructor, this);
-}
-
-/**
- * Create an event object.
- *
- * @param {String} event type.
- * @return {Object} event object.
- * @api private
- */
-function Event(type) {
-  this.type = type;
-};
-
-extend(Event.prototype, {
-
-  currentTarget: null,
-
-  target: null,
-
-  bubbles: true,
-
-  cancelBubble: false,
-
-  cancelable: true,
-
-  returnValue: true,
-
-  eventPhase: 0,
-
-  initEvent: function initEvent(type, canBubble, cancelable) {
-    this.type = type;
-    this.bubbles = !!canBubble;
-    this.cancelable = !!canBubble;
-    if (!this.cancelBubble) {
-      this.stopPropagation = returnFalse;
-    }
-    if (!this.cancelable) {
-      this.preventDefault = returnFalse;
-    }
-    return this;
-  },
-
-  preventDefault: function preventDefault() {
-    this.preventDefault = this.isDefaultPrevented = returnTrue;
-    this.returnValue = false;
-    return true;
-  },
-
-  isDefaultPrevented: returnFalse,
-
-  stopPropagation: function stopPropagation() {
-    this.stopPropagation = this.isPropagationStopped = returnTrue;
-    return true;
-  },
-
-  isPropagationStopped: returnFalse,
-
-  stopImmediatePropagation: function stopImmediatePropagation() {
-    this.returnValue = false;
-    this.stopPropagation();
-    this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue;
-  },
-
-  isImmediatePropagationStopped: returnFalse
-
-});
-
-function returnTrue() {
-  return true;
-}
-
-function returnFalse() {
-  return false;
 }
 
 export default EventEmitter;
