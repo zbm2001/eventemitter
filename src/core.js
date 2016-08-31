@@ -3,6 +3,8 @@ import typeOf from './util/typeOf';
 import create from './util/create';
 import Event from 'Event';
 
+var slice = Array.prototype.slice;
+
 /**
  * 查找侦听器在侦听器数组中的索引
  *
@@ -50,15 +52,18 @@ function alias(name) {
 
 Object.assign(EventEmitter.prototype, {
 
+  _events: null,
+
+  eventTypeDelimiter: /\s+/,
+
   /**
    * 添加一个侦听器到定义的事件侦听存储队列中
-   * 排除存储队列中已存在该侦听器 
-   * If the listener returns true then it will be removed after it is called.
-   * If you pass a regular expression as the event name then the listener will be added to all events that match it.
+   * 排除存储队列中已存在该侦听器
+   * 如果是一个正则并匹配已存储的事件队列命名，则向该事件队列做添加操作
    *
    * @param {String|RegExp} evt 事件名称
-   * @param {Function|Object} listener Method to be called when the event is emitted. If the function returns true then it will be removed after calling.
-   * @return {Object} Current instance of EventEmitter for chaining.
+   * @param {Function|Object} listener 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
+   * @return {Object} this 返回当前对象
    */
   addListener: function addListener(evt, listener) {
     var events = this._events,
@@ -73,7 +78,7 @@ Object.assign(EventEmitter.prototype, {
 
     wrapListenerArgs();
 
-    if (!evt) {
+    if (!evt || evt === '*') {
       if (l && events) {
         for (key in events) {
           listeners = events[key];
@@ -84,7 +89,7 @@ Object.assign(EventEmitter.prototype, {
       //
       case 'string':
         if (l) {
-          types = evt.split(rSpaces);
+          types = evt.split(this.eventTypeDelimiter);
           i = types.length;
           // add some event types
           if (events) {
@@ -163,14 +168,14 @@ Object.assign(EventEmitter.prototype, {
             case 'function':
               listenerArgs[j] = {
                 handleEvent: listener,
-                once: false
+                limit: false
               };
               continue outer;
 
             case 'object':
               listenerArgs[j] = {
                 listener: listener.listener,
-                once: false
+                limit: false
               };
               continue outer;
           }
@@ -227,6 +232,7 @@ Object.assign(EventEmitter.prototype, {
       key,
       listeners,
       types,
+      delimiter = this.eventTypeDelimiter,
       index,
       type,
       listenerArgs = slice.call(arguments, 1),
@@ -286,7 +292,7 @@ Object.assign(EventEmitter.prototype, {
     return this;
 
     function filters() {
-      types = evt.split(rSpaces);
+      types = evt.split(delimiter);
       i = types.length;
       while (i--) {
         if (listeners = events[type = types[i]]) {
@@ -309,7 +315,7 @@ Object.assign(EventEmitter.prototype, {
   },
 
   /**
-   * Alias of removeListener
+   * removeListener 的别名方法
    */
   off: alias('removeListener'),
 
@@ -329,7 +335,7 @@ Object.assign(EventEmitter.prototype, {
   },
 
   /**
-   * Alias of addAllListeners
+   * addAllListeners 的别名方法
    */
   onAll: alias('addAllListeners'),
 
@@ -349,7 +355,7 @@ Object.assign(EventEmitter.prototype, {
   },
 
   /**
-   * Alias of removeAllListeners
+   * removeAllListeners 的别名方法
    */
   offAll: alias('removeAllListeners'),
 
@@ -387,7 +393,7 @@ Object.assign(EventEmitter.prototype, {
         }
       } else switch (typeof evt) {
         case 'string':
-          types = evt.split(rSpaces);
+          types = evt.split(this.eventTypeDelimiter);
           l = types.length;
           j = -1;
           while (++j < l) {
@@ -507,6 +513,33 @@ Object.assign(EventEmitter.prototype, {
     return this._events || (this._events = {});
   },
 
+
+  getListeners: function getListeners(evt) {
+    var events = this._events,
+        listeners = [],
+        key;
+
+        if(events){
+
+        }
+
+        // Return a concatenated array of all matching events if
+        // the selector is a regular expression.
+        if (evt instanceof RegExp) {
+            response = {};
+            for (key in events) {
+                if (events.hasOwnProperty(key) && evt.test(key)) {
+                    response[key] = events[key];
+                }
+            }
+        }
+        else {
+            response = events[evt] || (events[evt] = []);
+        }
+
+        return listeners;
+    }
+
   /**
    * 标准处理事件绑定this上下文
    *
@@ -571,34 +604,25 @@ Object.assign(EventEmitter.prototype, {
 
 });
 
-// static properties
-extend(EventEmitter, {
-  create: create,
+// 静态成员扩展
+Object.assign(EventEmitter, {
   inherito: inherito,
-  extend: extend,
-  isNativeFunction: isNativeFunction,
-  typeOf: typeOf,
-  Event: Event,
-  returnTrue: returnTrue,
-  returnFalse: returnFalse,
-  NUMBER_STRING_TYPE: NUMBER_STRING_TYPE,
-  REFERENCE_TYPE: REFERENCE_TYPE,
-  noop: noop,
-  rSpaces: rSpaces
+  Event: Event
 });
 
-// 创建一个基于指定类原型的对象
-function create() {
-  noop.prototype = this.prototype;
-  return new noop;
-}
+/**
+ * 继承给指定的类
+ * @param  {function} constructor 构造函数
+ * @param  {object} protoProps 原型方法集
+ * @param  {object} staticProps 静态方法集
+ * @return {[type]}             [description]
+ */
+function inherito(constructor, protoProps, staticProps) {
+  // 原型继承并扩展成员
+  assign(constructor.prototype = create(this.prototype), { constructor: constructor }, protoProps);
 
-// 继承给指定的类
-function inherito(constructor, props) {
-  extend(constructor.prototype = this.create(), props)
-    .constructor = constructor;
-  // 静态成员继承
-  extend(constructor, this);
+  // 静态成员扩展
+  assign(constructor, staticProps);
 }
 
 export default EventEmitter;

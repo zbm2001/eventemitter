@@ -73,6 +73,10 @@ Object.assign(Event.prototype, {
 
 });
 
+Event.returnTrue = returnTrue;
+
+Event.returnFalse = returnFalse;
+
 function returnTrue() {
   return true;
 }
