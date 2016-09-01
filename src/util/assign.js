@@ -5,7 +5,10 @@ export default isNativeFunction(Object.assign) ? Object.assign :
     if (target == null) {
       throw new TypeError('Cannot convert undefined or null to object');
     }
-    var output = Object(target), i = 1, l = arguments.length, prop, source;
+    var output = Object(target),
+      i = 1,
+      l = arguments.length,
+      prop, source;
     for (; i < l; i++) {
       source = arguments[i];
       if (source != null) {
@@ -18,4 +21,3 @@ export default isNativeFunction(Object.assign) ? Object.assign :
     }
     return output;
   });
-

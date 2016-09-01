@@ -15,23 +15,24 @@ var slice = Array.prototype.slice;
  */
 function indexOfListener(listeners, listener) {
   var i = listeners.length;
-
-  switch (typeof listener) {
-    case 'function':
-      while (i--) {
-        if (listeners[i].handleEvent === listener) {
-          return i;
+  if (listener) {
+    switch (typeof listener) {
+      case 'function':
+        while (i--) {
+          if (listeners[i].handleEvent === listener) {
+            return i;
+          }
         }
-      }
-      return -1;
+        return -1;
 
-    case 'object':
-      while (i--) {
-        if (listeners[i].listener === listener) {
-          return i;
+      case 'object':
+        while (i--) {
+          if (listeners[i].listener === listener) {
+            return i;
+          }
         }
-      }
-      return -1;
+        return -1;
+    }
   }
   return -1;
 }
@@ -64,131 +65,110 @@ Object.assign(EventEmitter.prototype, {
    * @param {String|RegExp} evt 事件名称
    * @param {Function|Object} listener 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this 返回当前对象
+   * @api private
    */
   addListener: function addListener(evt, listener) {
-    var events = this._events,
-      key,
+    var events,
       listeners,
       types,
-      i,
       type,
-      listenerArgs = slice.call(arguments, 1),
-      l,
-      j;
+      listenerArgs,
+      i,
+      l;
 
-    wrapListenerArgs();
+    // 必须至少包含两个参数
+    if (!evt || arguments.length < 2) {
+      return this;
+    }
 
-    if (!evt || evt === '*') {
-      if (l && events) {
-        for (key in events) {
-          listeners = events[key];
-          adds();
-        }
-      }
-    } else switch (typeof evt) {
-      //
-      case 'string':
-        if (l) {
-          types = evt.split(this.eventTypeDelimiter);
-          i = types.length;
-          // add some event types
-          if (events) {
-            while (i--) {
-              if (hasOwnProperty.call(events, types[i])) {
-                listeners = events[types[i]];
+    events = this._events;
+    listenerArgs = wrapListenerArgs(arguments);
+
+    if (l = listenerArgs.length) {
+      switch (typeof evt) {
+        // 若为事件名
+        case 'string':
+          // 若为通配符
+          if (evt === '*') {
+            if (events) {
+              for (type in events) {
+                listeners = events[type];
                 adds();
-              } else {
+              }
+            }
+          } else {
+            types = evt.split(this.eventTypeDelimiter);
+            i = types.length;
+            // 添加到已存在的事件侦听器列表
+            if (events) {
+              while (i--) {
+                if (hasOwnProperty.call(events, types[i])) {
+                  listeners = events[types[i]];
+                  adds();
+                } else {
+                  events[types[i]] = listenerArgs.slice();
+                }
+              }
+            }
+            // 创建新的事件侦听器列表
+            else {
+              events = this._events = {};
+              while (i--) {
                 events[types[i]] = listenerArgs.slice();
               }
             }
           }
-          // add All event types
-          else {
-            events = this._events = {};
-            while (i--) {
-              events[types[i]] = listenerArgs.slice();
-            }
-          }
-        }
-        break;
-        //
-      case 'function':
-        // add some event types
-        if (events) {
-          listenerArgs = slice.call(arguments, 0);
-          wrapListenerArgs();
-          for (key in events) {
-            listeners = events[key];
-            adds();
-          }
-        }
-        break;
-        //
-      case 'object':
+          break;
 
-        if (evt.test) {
-          if (l && events) {
-            for (key in events) {
-              if (evt.test(key)) {
-                listeners = events[key];
-                adds();
+        default:
+          // 若包含一个类正则匹配的 test 方法
+          if (typeof evt.test === 'function') {
+            // 只匹配已存在的事件名
+            if (events) {
+              for (type in events) {
+                if (evt.test(type)) {
+                  listeners = events[type];
+                  adds();
+                }
               }
             }
           }
-        }
-        // has events
-        else {
-          if (!events) {
-            events = this._events = {};
-          }
-          for (key in evt) {
-            if (hasOwnProperty.call(evt, key)) {
-              listenerArgs = typeof evt[key] === 'function' ? [evt[key]] : evt[key];
-              wrapListenerArgs();
-              if (hasOwnProperty.call(events, key)) {
-                listeners = events[key];
-                adds();
-              } else {
-                events[key] = listenerArgs;
-              }
-            }
-          }
-        }
-        break;
+      }
     }
 
     return this;
 
-    function wrapListenerArgs() {
-      var listener;
-      j = l = listenerArgs.length;
-      outer: while (j--) {
-        if (listener = listenerArgs[j]) {
-          switch (typeof listener) {
+    function wrapListenerArgs(args) {
+      var i = 0,
+        l = args.length,
+        arr = [];
+
+      outer: while (++i < l) {
+        if (args[i]) {
+          switch (typeof args[i]) {
             case 'function':
-              listenerArgs[j] = {
-                handleEvent: listener,
+              arr.push({
+                handleEvent: args[i],
                 limit: false
-              };
+              });
               continue outer;
 
             case 'object':
-              listenerArgs[j] = {
-                listener: listener.listener,
+              arr.push({
+                listener: args[i],
                 limit: false
-              };
+              });
               continue outer;
           }
         }
-        listenerArgs.splice(j--, 1);
       }
     }
 
     function adds() {
-      j = -1;
-      while (++j < l) {
-        if (indexOfListener(listeners, listenerArgs[j].listener) < 0) {
-          listeners.push(listenerArgs[j]);
+      var i = -1;
+      while (++i < l) {
+        if (indexOfListener(listeners, listenerArgs[i].listener || listenerArgs[i].handleEvent) < 0) {
+          listeners.push(listenerArgs[i]);
         }
       }
     }
@@ -226,88 +206,78 @@ Object.assign(EventEmitter.prototype, {
    * @param {String|RegExp} evt Name of the event to remove the listener from.
    * @param {Function} listener Method to remove from the event.
    * @return {Object} Current instance of EventEmitter for chaining.
+   * @api public
    */
   removeListener: function removeListener(evt, listener) {
     var events = this._events,
-      key,
       listeners,
       types,
-      delimiter = this.eventTypeDelimiter,
-      index,
       type,
-      listenerArgs = slice.call(arguments, 1),
-      l = listenerArgs.length,
-      i,
-      j;
+      listenerArgs,
+      l;
 
-    if (events) {
-      // remove all listeners
-      if (!evt) {
-        for (key in events) {
-          if (hasOwnProperty.call(events, key)) {
-            delete events[key];
-          }
-        }
-      }
-      // remove some listeners
-      else switch (typeof evt) {
-        case 'string':
-          filters();
-          break;
-        case 'function':
-          listenerArgs = slice.call(arguments, 0);;
-          l = listenerArgs.length;
-          for (key in events) {
-            if (hasOwnProperty.call(events, key)) {
-              listeners = events[type = key];
-              filter();
-            }
-          }
-          break;
-        case 'object':
-          // remove some match listeners
-          if (evt.test) {
-            for (key in events) {
-              if (hasOwnProperty.call(events, key) && evt.test(key)) {
-                listeners = events[type = key];
-                filter();
-              }
-            }
-          }
-          // remove some listeners (types hash)
-          else {
-            for (key in evt) {
-              if (hasOwnProperty.call(evt, key) && hasOwnProperty.call(events, key)) {
-                listeners = events[key];
-                listenerArgs = typeof evt[key] === 'function' ? [evt[key]] : evt[key];
-                l = listenerArgs.length;
-                filters();
-              }
-            }
-          }
-          break;
-      }
+    if (!evt || !events || arguments.length < 2) {
+      return this;
     }
 
+    listenerArgs = slice.call(arguments, 1);
+    l = listenerArgs.length;
+
+    if (l) {
+      switch (typeof evt) {
+        // 若为事件名
+        case 'string':
+          // 若为通配符
+          if (evt === '*') {
+            for (type in events) {
+              listeners = events[type];
+              filter(type);
+            }
+          } else {
+            types = evt.split(this.eventTypeDelimiter);
+            filters(types);
+          }
+          break;
+
+        default:
+          // 若包含一个类正则匹配的 test 方法
+          if (typeof evt.test === 'function') {
+            for (type in events) {
+              // 只匹配已存在的事件名
+              if (evt.test(type)) {
+                listeners = events[type];
+                filter(type);
+              }
+            }
+          }
+      }
+    }
+    else{
+
+    }
+
+    for(type in events){
+      return this;
+    }
+    delete this._events;
     return this;
 
-    function filters() {
-      types = evt.split(delimiter);
-      i = types.length;
+    function filters(types) {
+      var i = types.length;
       while (i--) {
         if (listeners = events[type = types[i]]) {
-          filter();
+          filter(type);
         }
       }
     }
 
-    function filter() {
-      j = 0;
+    function filter(type) {
+      var i = 0;
       do {
-        if ((index = indexOfListener(listeners, listenerArgs[j].listener)) > -1) {
+        if ((index = indexOfListener(listeners, listenerArgs[j])) > -1) {
           listeners.splice(index, 1);
         }
-      } while (++j < l && listeners.length);
+      } while (++i < l && listeners.length);
       if (!listeners.length) {
         delete events[type];
       }
@@ -316,6 +286,7 @@ Object.assign(EventEmitter.prototype, {
 
   /**
    * removeListener 的别名方法
+   * @api public
    */
   off: alias('removeListener'),
 
@@ -328,6 +299,7 @@ Object.assign(EventEmitter.prototype, {
    * @param {String|Object|RegExp} evt An event name if you will pass an array of listeners next. An object if you wish to add to multiple events at once.
    * @param {Function[]} [listeners] An optional array of listener functions to add.
    * @return {Object} Current instance of EventEmitter for chaining.
+   * @api private
    */
   addAllListeners: function addAllListeners(listeners) {
     // Pass through to manipulateListeners
@@ -336,6 +308,7 @@ Object.assign(EventEmitter.prototype, {
 
   /**
    * addAllListeners 的别名方法
+   * @api public
    */
   onAll: alias('addAllListeners'),
 
@@ -348,6 +321,7 @@ Object.assign(EventEmitter.prototype, {
    * @param {String|Object|RegExp} evt An event name if you will pass an array of listeners next. An object if you wish to remove from multiple events at once.
    * @param {Function[]} [listeners] An optional array of listener functions to remove.
    * @return {Object} Current instance of EventEmitter for chaining.
+   * @api private
    */
   removeAllListeners: function removeAllListeners(listeners) {
     // Pass through to manipulateListeners
@@ -370,47 +344,55 @@ Object.assign(EventEmitter.prototype, {
    * @param {String|RegExp} evt Name of the event to emit and execute listeners for.
    * @param {Array} [args] Optional array of arguments to be passed to each listener.
    * @return {Object} Current instance of EventEmitter for chaining.
+   * @api 
    */
-  emitEvent: function emitEvent(evt, args, target) {
-    var that = this,
-      events = this._events,
+  _emitEvent: function emitEvent(evt, args, target) {
+    var events = this._events,
       listeners,
       i,
+      l,
       types,
       type,
-      l,
-      j,
       event,
       onceReturnValue = this._onceReturnValue;
 
+    if(!evt){
+      return event;
+    }
+
     target || (target = this);
+    args || (args = []);
 
     if (events) {
-      args || (args = []);
-      if (!evt) {
-        for (type in events) {
-          emits.call(this, type, events[type], args);
-        }
-      } else switch (typeof evt) {
+      switch (typeof evt) {
         case 'string':
+
+        if(evt === '*'){
+            for (type in events) {
+                emits.call(this, type, events[type], args);
+            }
+        }
+        else{
           types = evt.split(this.eventTypeDelimiter);
           l = types.length;
-          j = -1;
-          while (++j < l) {
-            if (listeners = events[types[j]]) {
-              emits.call(this, types[j], listeners, args);
+          i = -1;
+          while (++i < l) {
+            if (listeners = events[types[i]]) {
+              emits.call(this, types[i], listeners, args);
             }
           }
+        }
           break;
-        case 'object':
-          if (evt.test) {
+        
+        default:
+          // 若包含一个类正则匹配的 test 方法
+          if (typeof evt.test === 'function') {
             for (type in events) {
               if (evt.test(type)) {
                 emits.call(this, type, events[type], args);
               }
             }
           }
-          break;
       }
     } else if (this.parent && this.parent.emitEvent) {
       this.parent.emitEvent(evt, args, target);
@@ -430,8 +412,10 @@ Object.assign(EventEmitter.prototype, {
         // If the listener returns true then it shall be removed from the event
         // The function is executed either with a basic call or an apply if there is an args array
         listener = listeners[i];
-        handleEvent = listener.listener;
-        context = listener.context || this;
+        context = listener.listener || this;
+        handleEvent = listener.handleEvent || context;
+
+        context
 
         if (listener.once === true) {
           this.removeListener(type, handleEvent);
@@ -486,11 +470,6 @@ Object.assign(EventEmitter.prototype, {
   },
 
   /**
-   * Alias of emitEvent
-   */
-  trigger: alias('emitEvent'),
-
-  /**
    * Subtly different from emitEvent in that it will pass its arguments on to the listeners, as opposed to taking a single array of arguments to pass on.
    * As with emitEvent, you can pass a regex in place of the event name to emit to all events that match it.
    *
@@ -502,6 +481,11 @@ Object.assign(EventEmitter.prototype, {
     var args = slice.call(arguments, 1);
     return this.emitEvent(evt, args);
   },
+
+  /**
+   * emit 别名方法
+   */
+  trigger: alias('emit'),
 
   /**
    * Fetches the events object and creates one if required.
@@ -516,29 +500,28 @@ Object.assign(EventEmitter.prototype, {
 
   getListeners: function getListeners(evt) {
     var events = this._events,
-        listeners = [],
-        key;
+      listeners = [],
+      key;
 
-        if(events){
+    if (events) {
 
-        }
-
-        // Return a concatenated array of all matching events if
-        // the selector is a regular expression.
-        if (evt instanceof RegExp) {
-            response = {};
-            for (key in events) {
-                if (events.hasOwnProperty(key) && evt.test(key)) {
-                    response[key] = events[key];
-                }
-            }
-        }
-        else {
-            response = events[evt] || (events[evt] = []);
-        }
-
-        return listeners;
     }
+
+    // Return a concatenated array of all matching events if
+    // the selector is a regular expression.
+    if (evt instanceof RegExp) {
+      response = {};
+      for (key in events) {
+        if (events.hasOwnProperty(key) && evt.test(key)) {
+          response[key] = events[key];
+        }
+      }
+    } else {
+      response = events[evt] || (events[evt] = []);
+    }
+
+    return listeners;
+  },
 
   /**
    * 标准处理事件绑定this上下文
@@ -558,7 +541,7 @@ Object.assign(EventEmitter.prototype, {
   /**
    * Fetches the events object and creates one if required.
    *
-   * @param {...*} 可选参数为原型方法名
+   * @param {...String} 可选参数为原型方法名
    * @return {Object} this
    * @api public
    */
@@ -619,7 +602,9 @@ Object.assign(EventEmitter, {
  */
 function inherito(constructor, protoProps, staticProps) {
   // 原型继承并扩展成员
-  assign(constructor.prototype = create(this.prototype), { constructor: constructor }, protoProps);
+  assign(constructor.prototype = create(this.prototype), {
+    constructor: constructor
+  }, protoProps);
 
   // 静态成员扩展
   assign(constructor, staticProps);
