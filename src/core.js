@@ -58,11 +58,12 @@ Object.assign(EventEmitter.prototype, {
   eventTypeDelimiter: /\s+/,
 
   /**
-   * 添加一个侦听器到定义的事件侦听存储队列中
-   * 排除存储队列中已存在该侦听器
-   * 如果是一个正则并匹配已存储的事件队列命名，则向该事件队列做添加操作
+   * 添加事件侦听器
    *
-   * @param {String|RegExp} evt 事件名称
+   * 若对应的事件类型队列中已存在，并已包含了该侦听器，添加将被忽略
+   * 若是一个类正则对象（具备.test方法的任意对象）并匹配已存在的事件类型，则向该事件类型队列做添加操作
+   *
+   * @param {String|RegExp} evt 事件名称或类正则对象
    * @param {Function|Object} listener 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this 返回当前对象
    * @api private
@@ -99,7 +100,7 @@ Object.assign(EventEmitter.prototype, {
           } else {
             types = evt.split(this.eventTypeDelimiter);
             i = types.length;
-            // 添加到已存在的事件侦听器列表
+            // 添加到队列
             if (events) {
               while (i--) {
                 if (hasOwnProperty.call(events, types[i])) {
@@ -110,7 +111,7 @@ Object.assign(EventEmitter.prototype, {
                 }
               }
             }
-            // 创建新的事件侦听器列表
+            // 创建新的队列
             else {
               events = this._events = {};
               while (i--) {
