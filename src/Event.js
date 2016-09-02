@@ -12,34 +12,34 @@ function Event(type) {
 };
 
 Object.assign(Event.prototype, {
-
+  // 捕获阶段
   CAPTURING_PHASE: 1,
-
+  // 在目标组件上上
   AT_TARGET: 2,
-
+  // 冒泡阶段
   BUBBLING_PHASE: 3,
 
   eventPhase: 0,
-
+  // 事件绑定的目标组件上
   currentTarget: null,
-
+  // 事件发生的目标组件
   target: null,
-
+  // 时间为冒泡模型
   bubbles: true,
-
+  // 是否已取消冒泡
   cancelBubble: false,
-
+  // 
   cancelable: true,
-
+  // 阻止事件默认行为
   returnValue: true,
 
   eventPhase: 0,
 
-  function initEvent(type, canBubble, cancelable) {
+  initEvent(type, bubbles, cancelable) {
     this.type = type;
-    this.bubbles = !!canBubble;
-    this.cancelable = !!canBubble;
-    if (!this.cancelBubble) {
+    this.bubbles = !!bubbles;
+    this.cancelable = !!cancelable;
+    if (!this.bubbles) {
       this.stopPropagation = returnFalse;
     }
     if (!this.cancelable) {
@@ -48,7 +48,7 @@ Object.assign(Event.prototype, {
     return this;
   },
 
-  function preventDefault() {
+  preventDefault() {
     this.preventDefault = this.isDefaultPrevented = returnTrue;
     this.returnValue = false;
     return true;
@@ -56,14 +56,15 @@ Object.assign(Event.prototype, {
 
   isDefaultPrevented: returnFalse,
 
-  function stopPropagation() {
+  stopPropagation() {
     this.stopPropagation = this.isPropagationStopped = returnTrue;
+    this.cancelBubble = true;
     return true;
   },
 
   isPropagationStopped: returnFalse,
 
-  function stopImmediatePropagation() {
+  stopImmediatePropagation() {
     this.returnValue = false;
     this.stopPropagation();
     this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue;
@@ -74,7 +75,6 @@ Object.assign(Event.prototype, {
 });
 
 Event.returnTrue = returnTrue;
-
 Event.returnFalse = returnFalse;
 
 function returnTrue() {
