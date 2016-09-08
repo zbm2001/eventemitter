@@ -2,35 +2,7 @@ import './util/assign';
 import typeOf from './util/typeOf';
 import create from './util/create';
 import Event from 'Event';
-// JavaScript Document
 
-// 0 不符合模式
-// 1 能符合模式，安全强度低
-// 2 能符合模式，安全强度中
-// 3 能符合模式，安全强度高
-function getSafeRank(value){
-  
-  var r = /^[\w~`!@#$%^&*()_\-+={}[\]|\\:;"<>,.?\/]{6,16}$/;
-  var w; 
-  
-  // 不符合模式
-  if(!r.test(value)){
-    return 0;
-  }
-  //
-  else if(!/\D/.test(value) || !/\w/.test(value) || !/[^a-zA-Z]/.test(value)){
-    return 2;
-  }
-  //
-  else if(/\d/.test(value) && /[a-zA-Z]/.test(value) && /\W/.test(value)){
-    return 3;
-  }
-  //
-  else{
-    return 1;
-  }
-  
-}
 var slice = Array.prototype.slice;
 
 /**
