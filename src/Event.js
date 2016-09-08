@@ -12,13 +12,15 @@ function Event(type) {
 };
 
 Object.assign(Event.prototype, {
+  // 事件类型
+  type: '',
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上
   AT_TARGET: 2,
   // 冒泡阶段
   BUBBLING_PHASE: 3,
-
+  // 事件所处的阶段
   eventPhase: 0,
   // 事件绑定的目标组件上
   currentTarget: null,
@@ -32,8 +34,6 @@ Object.assign(Event.prototype, {
   cancelable: true,
   // 阻止事件默认行为
   returnValue: true,
-
-  eventPhase: 0,
 
   initEvent(type, bubbles, cancelable) {
     this.type = type;
@@ -74,8 +74,17 @@ Object.assign(Event.prototype, {
 
 });
 
-Event.returnTrue = returnTrue;
-Event.returnFalse = returnFalse;
+
+Object.assign(Event, {
+  // 捕获阶段
+  CAPTURING_PHASE: 1,
+  // 在目标组件上上
+  AT_TARGET: 2,
+  // 冒泡阶段
+  BUBBLING_PHASE: 3,
+  returnTrue: returnTrue;
+  returnFalse: returnFalse;
+}
 
 function returnTrue() {
   return true;
