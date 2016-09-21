@@ -1,8 +1,20 @@
 // 项目下直接命令 node rollup.js
+// import fs from 'fs';
+// import rollup from 'rollup';
+// import buble from 'rollup-plugin-buble';
+// import uglify from 'rollup-plugin-uglify';
+
 const fs = require('fs');
 const rollup = require('rollup');
 const buble = require('rollup-plugin-buble');
 const uglify = require('rollup-plugin-uglify');
+const uglifyjs = require('uglify-js');
+
+var minifyOptions = { fromString: true };
+function minify(code){
+  var result = uglifyjs.minify(code, minifyOptions);
+  return result.code;
+}
 
 var pkg = JSON.parse(fs.readFileSync('./package.json'));
 
@@ -19,19 +31,21 @@ rollup.rollup({
       exclude: 'node_modules/**'
     })
     // 其他插件，如压缩代码等
-    ,uglify()
+    // ,uglify()
   ]
 }).then(bundle => {
 
   var result = bundle.generate({
     // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
     format: 'iife',
-    moduleName: 'Date', // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
+    moduleName: 'Validator', // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
     sourceMap: false
   });
 
-  // // dest 生成的目标文件
-  fs.writeFileSync( 'date.min.js', banner + '\n' + result.code );
+  // dest 生成的目标文件
+  fs.writeFileSync( 'validator.js', banner + '\n' + result.code );
+  fs.writeFileSync( 'validator.min.js', banner + '\n' + minify(result.code) );
+  
   
   // // bundle写入方式
   // bundle.write({
