@@ -3,7 +3,7 @@ import typeOf from './util/typeOf';
 import create from './util/create';
 import Event from 'Event';
 
-var slice = Array.prototype.slice;
+const slice = Array.prototype.slice;
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -68,24 +68,23 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this 返回当前对象
    * @api private
    */
-  addListener: function addListener(evt, listener) {
+  addListener(evt, ...listenerArgs) {
     var events,
       listeners,
       types,
       type,
-      listenerArgs,
       i,
-      l;
+	  listenerWrappers,
+      l = listenerArgs.length;
 
     // 必须至少包含两个参数
-    if (!evt || arguments.length < 2) {
+    if (!evt || !l) {
       return this;
     }
 
     events = this._events;
-    listenerArgs = wrapListenerArgs(arguments);
+    listenerWrappers = wrapListenerArgs(listenerArgs);
 
-    if (l = listenerArgs.length) {
       switch (typeof evt) {
         // 若为事件名
         case 'string':
@@ -107,7 +106,7 @@ Object.assign(EventEmitter.prototype, {
                   listeners = events[types[i]];
                   adds();
                 } else {
-                  events[types[i]] = listenerArgs.slice();
+                  events[types[i]] = listenerWrappers.slice();
                 }
               }
             }
@@ -115,7 +114,7 @@ Object.assign(EventEmitter.prototype, {
             else {
               events = this._events = {};
               while (i--) {
-                events[types[i]] = listenerArgs.slice();
+                events[types[i]] = listenerWrappers.slice();
               }
             }
           }
@@ -135,29 +134,28 @@ Object.assign(EventEmitter.prototype, {
             }
           }
       }
-    }
 
     return this;
 
-    function wrapListenerArgs(args) {
+    function wrapListenerArgs(listenerArgs) {
       var i = 0,
-        l = args.length,
-        arr = [];
+        l = listenerArgs.length,
+        listeners = [];
 
       outer: while (++i < l) {
-        if (args[i]) {
-          switch (typeof args[i]) {
+        if (listenerArgs[i]) {
+          switch (typeof listenerArgs[i]) {
             case 'function':
-              arr.push({
+              listeners.push({
                 listener: null,
-                handleEvent: args[i],
+                handleEvent: listenerArgs[i],
                 limit: false
               });
               continue outer;
 
             case 'object':
-              arr.push({
-                listener: args[i],
+              listeners.push({
+                listener: listenerArgs[i],
                 handleEvent: null,
                 limit: false
               });
@@ -165,14 +163,14 @@ Object.assign(EventEmitter.prototype, {
           }
         }
       }
-      return arr;
+      return listeners;
     }
 
     function adds() {
-      var i = -1;
+      var i = -1,
       while (++i < l) {
-        if (indexOfListener(listeners, listenerArgs[i].listener || listenerArgs[i].handleEvent) < 0) {
-          listeners.push(listenerArgs[i]);
+        if (indexOfListener(listeners, listenerWrappers[i].listener || listenerWrappers[i].handleEvent) < 0) {
+          listeners.push(listenerWrappers[i]);
         }
       }
     }
@@ -459,12 +457,12 @@ Object.assign(EventEmitter.prototype, {
   /**
    *
    */
-  createEvent: function createEvent(type, target, canBubble, cancelable) {
+  createEvent(type, target, canBubble, cancelable) {
     var event = new Event(type);
-    event.initEvent(type, canBubble, cancelable);
     event.currentTarget = this;
     event.target = target || this;
     event.timeStamp = now();
+    event.initEvent(canBubble, cancelable);
     return EventEmitter.event = event;
   },
 

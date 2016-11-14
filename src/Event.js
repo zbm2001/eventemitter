@@ -35,8 +35,7 @@ Object.assign(Event.prototype, {
   // 阻止事件默认行为
   returnValue: true,
 
-  initEvent(type, bubbles, cancelable) {
-    this.type = type;
+  initEvent(bubbles, cancelable) {
     this.bubbles = !!bubbles;
     this.cancelable = !!cancelable;
     if (!this.bubbles) {
