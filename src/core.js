@@ -46,8 +46,8 @@ function indexOfListener(listeners, listener) {
  * @api private
  */
 function alias(name) {
-  return function aliasClosure() {
-    return this[name].apply(this, arguments);
+  return function aliasClosure(...args) {
+    return this[name](...args);
   }
 }
 
@@ -559,13 +559,14 @@ Object.assign(EventEmitter.prototype, {
       response = events[evt] || (events[evt] = []);
     }
 
+
     return listeners;
   },
 
   /**
    * 标准处理事件绑定this上下文
    *
-   * @param {...string} 可选参数为原型方法名
+   * @param {Array} methodNames 可选参数为原型上的方法名集合
    * @return {Object} this
    * @api public
    */
@@ -577,9 +578,9 @@ Object.assign(EventEmitter.prototype, {
   },
 
   /**
-   * Fetches the events object and creates one if required.
+   * 原型方法绑定到同名的属性方法，锁定this
    *
-   * @param {...String} 可选参数为原型方法名
+   * @param {Array} methodNames 可选参数为原型上的方法名集合
    * @return {Object} this
    * @api public
    */
