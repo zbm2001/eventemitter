@@ -557,7 +557,11 @@ Object.assign(EventEmitter.prototype, {
    * @api public
    */
   bind(...methodNames) {
-    methodNames.forEach(methodName => typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this)));
+    var i = -1, l = methodNames.length, methodName;
+    while(++i < l){
+      methodName = methodNames[i];
+      typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this));
+    }
   },
 
   /**
