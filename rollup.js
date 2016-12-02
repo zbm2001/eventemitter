@@ -9,22 +9,26 @@ const rollup = require('rollup');
 const buble = require('rollup-plugin-buble');
 const uglify = require('rollup-plugin-uglify');
 const uglifyjs = require('uglify-js');
+const package = require('./package.json');
 
-var minifyOptions = { fromString: true };
 function minify(code){
+  var minifyOptions = { fromString: true };
   var result = uglifyjs.minify(code, minifyOptions);
   return result.code;
 }
 
-var pkg = JSON.parse(fs.readFileSync('./package.json'));
+//var pkg = JSON.parse(fs.readFileSync('./package.json'));
 
-var banner = '/*\n' +
+const banner = '/*\n' +
 'name,version,description,author,license'.split(',')
-.map((k) => ` * @${k}: ${pkg[k]}`).join('\n') +
+.map((k) => ` * @${k}: ${package[k]}`).join('\n') +
 '\n */';
 
+const outFormat = package.rollupOutFormat || 'amd';
+const srcEntry = { amd: 'core', cjs: 'core', es: 'core', iife: 'index', umd: 'index' }[outFormat];
+
 rollup.rollup({
-  entry: 'src/index.js',
+  entry: 'src/' + srcEntry + '.js',
   plugins: [
     // 结合 buble 比 babel 更快
     buble({
@@ -37,14 +41,14 @@ rollup.rollup({
 
   var result = bundle.generate({
     // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
-    format: 'iife',
-    moduleName: 'EventEmitter', // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
+    format: outFormat,
+    moduleName: package.name, // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
     sourceMap: false
   });
 
   // dest 生成的目标文件
-  fs.writeFileSync( 'EventEmitter.js', banner + '\n' + result.code );
-  fs.writeFileSync( 'EventEmitter.min.js', banner + '\n' + minify(result.code) );
+  fs.writeFileSync( package.name + '.js', banner + '\n' + result.code );
+  fs.writeFileSync( package.name + '.min.js', banner + '\n' + minify(result.code) );
   
   
   // // bundle写入方式
@@ -52,7 +56,7 @@ rollup.rollup({
   //   // output format - 'amd', 'cjs', 'es6', 'iife', 'umd'
   //   format: 'iife',
   //   moduleName: 'Date', // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
-  //   dest: 'date.js',
+  //   dest: moduleName + '.js',
   //   banner: banner,
   //   sourceMap: false
   // });

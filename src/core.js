@@ -2,7 +2,7 @@ import assign from './util/assign';
 import typeOf from './util/typeOf';
 import create from './util/create';
 import uuid from './util/uuid';
-import Event from 'Event';
+import Event from './Event';
 
 const slice = Array.prototype.slice;
 const wrapperSignKey = '__event_listener_wrapper_' + Date.now() + '_' + uuid() + '__';
@@ -51,22 +51,26 @@ function wrapListenerArgs(listenerArgs, limit) {
   var i = 0,
     l = listenerArgs.length,
     listenerWrappers = [],
+    listenerWrapper,
     listener;
 
   outer: while (++i < l) {
     listener = listenerArgs[i];
     if (listener) {
-      switch (typeof listener) {
-        case 'function':
-          listenerWrappers.push({
+      listenerWrapper = {
             listener: null,
             handleEvent: listener,
             limit: typeof limit === 'number' ? limit : Infinity,
             [wrapperSignKey]: ++wrapperSignIndex
-          });
+          };
+      switch (typeof listener) {
+        case 'function':
+          listenerWrappers.push(listenerWrapper);
           continue outer;
 
         case 'object':
+        listenerWrapper.listener = listener;
+        listenerWrapper.handleEvent = null;
           listenerWrappers.push(listener[wrapperSignKey] ? listener : {
             listener: listener,
             handleEvent: null,
@@ -183,12 +187,12 @@ Object.assign(EventEmitter.prototype, {
     return this;
 
     function adds() {
-      var i = -1,
-        while (++i < l) {
-          if (indexOfListener(listeners, listenerWrappers[i].listener || listenerWrappers[i].handleEvent) < 0) {
-            listeners.push(listenerWrappers[i]);
-          }
+      var i = -1;
+      while (++i < l) {
+        if (indexOfListener(listeners, listenerWrappers[i].listener || listenerWrappers[i].handleEvent) < 0) {
+          listeners.push(listenerWrappers[i]);
         }
+      }
     }
   },
 
@@ -278,8 +282,10 @@ Object.assign(EventEmitter.prototype, {
     return this;
 
     function filter(events, type, listenerArgs) {
-      var l = listenerArgs.length, i = 0, listenerWrappers = events[type];
-      if(l){
+      var l = listenerArgs.length,
+        i = 0,
+        listenerWrappers = events[type];
+      if (l) {
         do {
           if ((index = indexOfListener(listenerWrappers, listenerArgs[i])) > -1) {
             listenerWrappers.splice(index, 1);
@@ -292,8 +298,7 @@ Object.assign(EventEmitter.prototype, {
             listenerWrappers.emittingIndex < index || listenerWrappers.emittingIndex--;
           }
         } while (++i < l);
-      }
-      else{
+      } else {
         listenerWrappers.length = 0;
         delete events[type];
       }
@@ -557,8 +562,10 @@ Object.assign(EventEmitter.prototype, {
    * @api public
    */
   bind(...methodNames) {
-    var i = -1, l = methodNames.length, methodName;
-    while(++i < l){
+    var i = -1,
+      l = methodNames.length,
+      methodName;
+    while (++i < l) {
       methodName = methodNames[i];
       typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this));
     }
