@@ -51,26 +51,22 @@ function wrapListenerArgs(listenerArgs, limit) {
   var i = 0,
     l = listenerArgs.length,
     listenerWrappers = [],
-    listenerWrapper,
     listener;
 
   outer: while (++i < l) {
     listener = listenerArgs[i];
     if (listener) {
-      listenerWrapper = {
+      switch (typeof listener) {
+        case 'function':
+          listenerWrappers.push({
             listener: null,
             handleEvent: listener,
             limit: typeof limit === 'number' ? limit : Infinity,
             [wrapperSignKey]: ++wrapperSignIndex
-          };
-      switch (typeof listener) {
-        case 'function':
-          listenerWrappers.push(listenerWrapper);
+          });
           continue outer;
 
         case 'object':
-        listenerWrapper.listener = listener;
-        listenerWrapper.handleEvent = null;
           listenerWrappers.push(listener[wrapperSignKey] ? listener : {
             listener: listener,
             handleEvent: null,
