@@ -4,9 +4,8 @@ import create from './util/create';
 import uuid from './util/uuid';
 import Event from './Event';
 
-const slice = Array.prototype.slice;
-const wrapperSignKey = '__event_listener_wrapper_' + Date.now() + '_' + uuid() + '__';
-var wrapperSignIndex = 0;
+const listenerWrapperSignKey = '__listener_wrapper_' + Date.now() + '_' + uuid() + '__';
+var listenerWrapperSignIndex = 0;
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -52,7 +51,7 @@ function wrapListenerArgs(listenerArgs, limit) {
     l = listenerArgs.length,
     listenerWrappers = [],
     listener;
-
+  typeof limit !== 'number' && (limit = Infinity);
   outer: while (++i < l) {
     listener = listenerArgs[i];
     if (listener) {
@@ -61,17 +60,17 @@ function wrapListenerArgs(listenerArgs, limit) {
           listenerWrappers.push({
             listener: null,
             handleEvent: listener,
-            limit: typeof limit === 'number' ? limit : Infinity,
-            [wrapperSignKey]: ++wrapperSignIndex
+            limit: limit,
+            [listenerWrapperSignKey]: ++listenerWrapperSignIndex
           });
           continue outer;
 
         case 'object':
-          listenerWrappers.push(listener[wrapperSignKey] ? listener : {
+          listenerWrappers.push(listener[listenerWrapperSignKey] ? listener : {
             listener: listener,
             handleEvent: null,
-            limit: typeof limit === 'number' ? limit : Infinity,
-            [wrapperSignKey]: ++wrapperSignIndex
+            limit: limit,
+            [listenerWrapperSignKey]: ++listenerWrapperSignIndex
           });
           continue outer;
       }
@@ -89,8 +88,8 @@ function wrapListenerArgs(listenerArgs, limit) {
  * @api private
  */
 function alias(name) {
-  return function aliasClosure(...args) {
-    return this[name](...args);
+  return function aliasClosure() {
+    return this[name].apply(this, arguments);
   }
 }
 
@@ -107,7 +106,7 @@ Object.assign(EventEmitter.prototype, {
    * 若是一个类正则对象（具备.test方法的任意对象）并匹配已存在的事件类型，则向该事件类型队列做添加操作
    *
    * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
-   * @param {Function|Object} listener 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
+   * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this 返回当前对象
    * @api public
    */
@@ -201,15 +200,11 @@ Object.assign(EventEmitter.prototype, {
    * 注册只执行一次的事件
    *
    * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
-   * @param {Function|Object} 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
+   * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
   addOnceListener(evt, ...listenerArgs) {
-    var listenerWrappers = wrapListenerArgs(listenerArgs),
-      listenerWrapper, i = -1;
-    while (listenerWrapper = listenerWrappers[++i]) {
-      listenerWrapper.limit = 1;
-    }
+    var listenerWrappers = wrapListenerArgs(listenerArgs, 1);
     return this.addListener(evt, ...listenerWrappers);
   },
 
@@ -219,10 +214,28 @@ Object.assign(EventEmitter.prototype, {
   once: alias('addOnceListener'),
 
   /**
+   * 注册限制执行次数的事件
+   *
+   * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
+   * @param {Number} limit 限制事件执行的次数
+   * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
+   * @return {Object} this
+   */
+  addOnlimitListener(evt, limit, ...listenerArgs) {
+    var listenerWrappers = wrapListenerArgs(listenerArgs, limit);
+    return this.addListener(evt, ...listenerWrappers);
+  },
+
+  /**
+   * addOnlimitListener 别名方法
+   */
+  onlimit: alias('addOnlimitListener'),
+
+  /**
    * 删除事件定义的事件
    *
    * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
-   * @param {Function|Object} 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
+   * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    * @api public
    */
@@ -348,7 +361,7 @@ Object.assign(EventEmitter.prototype, {
    *
    * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
    * @param {Array} args 用来call每个事件侦听器的参数
-   * @param {Object[EventEmitter]} target 触发事件的实例对象
+   * @param {Object} target 触发事件的实例对象
    * @param {Boolean} bubbles 指定是否为冒泡模型
    * @param {Boolean} cancelable 是否可以取消冒泡事件
    * @param {Boolean} returnValue 是否阻止事件默认行为（赋值）
@@ -362,7 +375,7 @@ Object.assign(EventEmitter.prototype, {
       l,
       types,
       type,
-      event;
+      event = null;
 
     if (!evt) {
       return event;
@@ -378,13 +391,19 @@ Object.assign(EventEmitter.prototype, {
           if (evt === '*') {
             for (type in events) {
               emits.call(this, type, events[type], args);
+              this.emitEventPropagation(event);
             }
           } else {
             types = evt.split(this.eventTypeDelimiter);
             l = types.length;
+            if(l < 2){
+              emits.call(this, evt, events[evt], args);
+              break;
+            }
             i = -1;
             while (++i < l) {
               emits.call(this, types[i], events[types[i]], args);
+              this.emitEventPropagation(event);
             }
           }
           break;
@@ -395,13 +414,17 @@ Object.assign(EventEmitter.prototype, {
             for (type in events) {
               if (evt.test(type)) {
                 emits.call(this, type, events[type], args);
+                this.emitEventPropagation(event);
               }
             }
           }
       }
+      delete EventEmitter.event;
     } else if (this.parent && this.parent.emitEvent) {
       this.parent.emitEvent(evt, args, target, bubbles, cancelable, returnValue);
     }
+
+    return event;
 
     function emits(type, listenerWrappers, args) {
       var listenerWrapper,
@@ -410,8 +433,7 @@ Object.assign(EventEmitter.prototype, {
         response;
 
       listenerWrappers.emittingIndex = -1;
-      event = this.createEvent(type, target);
-      returnValue || event.preventDefault();
+      event = this.createEvent(type, args, target, bubbles, cancelable, returnValue);
 
       outer: while (listenerWrapper = listenerWrappers[++listenerWrappers.emittingIndex]) {
         // 确定作用域和事件函数
@@ -443,21 +465,36 @@ Object.assign(EventEmitter.prototype, {
             break outer;
             // 返回值为真，则删除当前侦听器，及只执行一次当前事件
           case true:
-            // 
             this.removeListener(type, listenerWrapper);
             break;
+          default:
+            // 若执行次数限制为零，则删除当前侦听器
+            --listenerWrapper.limit || this.removeListener(type, listenerWrapper);
+        }
+
+        // 若已终止事件队列后续执行及事件冒泡
+        if (event.isImmediatePropagationStopped()) {
+          break;
         }
       }
 
       // 重置emitting索引
       listenerWrappers.emittingIndex = -1;
-
-      if (this.parent && this.parent.emitEvent && !event.isPropagationStopped()) {
-        this.parent.emitEvent(type, args, target, bubbles, cancelable, event.returnValue);
-      }
     }
+  },
 
-    return event;
+
+  /**
+   * 触发事件冒泡
+   *
+   * @param {Object} event 事件对象
+   * @return {Object} this
+   * @api private
+   */
+  emitEventPropagation(event) {
+    if (this.parent && this.parent.emitEvent && !event.isPropagationStopped()) {
+      this.parent.emitEvent(event.type, event.emitArgs, event.target, event.bubbles, event.cancelable, event.returnValue);
+    }
   },
 
   /**
@@ -470,12 +507,11 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  createEvent(type, target, bubbles, cancelable) {
+  createEvent(type, target, bubbles, cancelable, emitArgs, returnValue) {
     var event = new Event();
-    event.currentTarget = this;
-    event.target = target || this;
-    event.timeStamp = now();
-    event.initEvent(type, canBubble, cancelable);
+    event.initEvent(type, this, target, bubbles, cancelable);
+    event.emitArgs = emitArgs;
+    returnValue || event.preventDefault();
     return EventEmitter.event = event;
   },
 
@@ -483,58 +519,12 @@ Object.assign(EventEmitter.prototype, {
    * 触发事件
    *
    * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
-   * @param {Array} ...args 传递给事件处理的后续可选参数集
+   * @param {Array} args 传递给事件处理的后续可选参数集
    * @return {Object} this
    * @api private
    */
   emit(evt, ...args) {
     return this.emitEvent(evt, args, this, true, true, true);
-  },
-
-  /**
-   * emit 别名方法
-   */
-  trigger: alias('emit'),
-
-  /**
-   * 获取事件队列集合对象
-   *
-   * @return {Object} 事件队列存储对象
-   * @api private
-   */
-  _getEvents() {
-    return this._events || (this._events = {});
-  },
-
-  /**
-   * Fetches the events object and creates one if required.
-   *
-   * @return {Object} 事件
-   * @api private
-   */
-  getListeners(evt) {
-    var events = this._events,
-      listeners = [],
-      key;
-
-    if (events) {
-      return
-    }
-
-    // Return a concatenated array of all matching events if
-    // the selector is a regular expression.
-    if (typeof evt.test === 'function') {
-      response = {};
-      for (key in events) {
-        if (events.hasOwnProperty(key) && evt.test(key)) {
-          response[key] = events[key];
-        }
-      }
-    } else {
-      response = events[evt] || (events[evt] = []);
-    }
-
-    return listeners;
   },
 
   /**
@@ -546,7 +536,6 @@ Object.assign(EventEmitter.prototype, {
    */
   bindHandleEvent(...methodNames) {
     this.bind('handleEvent', ...methodNames);
-    this.bindHandleEvent = this.bind;
     return this;
   },
 
@@ -575,7 +564,7 @@ Object.assign(EventEmitter.prototype, {
 
   /**
    * 子实例的数组
-   * @type {null|Object[]} 必须是 EventEmitter 的实例数组
+   * @type {null|Array[]} 必须是 EventEmitter 的实例数组
    */
   children: null,
 
@@ -644,6 +633,7 @@ Object.assign(EventEmitter.prototype, {
 
 // 静态成员扩展
 Object.assign(EventEmitter, {
+  event: null,
   inherito: inherito,
   Event: Event
 });

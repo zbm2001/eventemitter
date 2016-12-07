@@ -1,6 +1,7 @@
 import isNativeFunction from './isNativeFunction';
 
-export default isNativeFunction(Object.assign) ? Object.assign :
+isNativeFunction(Object.assign) ||
+  // es6 Object.assign
   (Object.assign = function assign(target, ...args) {
     if (target == null) {
       throw new TypeError('Cannot convert undefined or null to object');
@@ -21,3 +22,5 @@ export default isNativeFunction(Object.assign) ? Object.assign :
     }
     return output;
   });
+
+export default Object.assign;

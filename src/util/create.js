@@ -1,22 +1,19 @@
 import isNativeFunction from './isNativeFunction';
 
-const REFERENCE_TYPE = {
-  'object': !0,
-  'function': !0
-};
 
-// noop Function
-function noop() {};
+if (!isNativeFunction(Object.create)) {
 
-// es6 Object.create
-export default isNativeFunction(Object.create) ? Object.create :
+  let hasOwnProperty = Object.prototype.hasOwnProperty;
+  let REFERENCE_TYPE = {
+    'object': !0,
+    'function': !0
+  };
+  // es5 Object.create
   (Object.create = function create(object, properties) {
     if (object == null || !REFERENCE_TYPE[typeof object]) {
       throw 'Object prototype may only be an Object or null';
     }
-    noop.prototype = object;
-    var proto = new noop,
-	hasOwnProperty = Object.prototype.hasOwnProperty,
+    var proto = { __proto__: object },
       prop, propName;
 
     if (properties) {
@@ -36,3 +33,7 @@ export default isNativeFunction(Object.create) ? Object.create :
     }
     return proto;
   });
+
+}
+
+export default Object.create;
