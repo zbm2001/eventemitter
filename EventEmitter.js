@@ -655,7 +655,6 @@ Object.assign(EventEmitter.prototype, {
             }
           }
       }
-      delete EventEmitter.event;
     } else if (this.parent && this.parent.emitEvent) {
       this.parent.emitEvent(evt, args, target, bubbles, cancelable, returnValue);
     }
@@ -750,7 +749,7 @@ Object.assign(EventEmitter.prototype, {
     event.initEvent(type, this, target, bubbles, cancelable);
     event.emitArgs = emitArgs;
     returnValue || event.preventDefault();
-    return EventEmitter.event = event;
+    return event;
   },
 
   /**
@@ -882,7 +881,6 @@ Object.assign(EventEmitter.prototype, {
 
 // 静态成员扩展
 Object.assign(EventEmitter, {
-  event: null,
   inherito: inherito,
   Event: Event
 });
@@ -899,6 +897,8 @@ function inherito(constructor, protoProps, staticProps) {
   Object.assign(constructor.prototype = Object.create(this.prototype), {
     constructor: constructor
   }, protoProps);
+
+  constructor.inherito = inherito;
 
   // 静态成员扩展
   return Object.assign(constructor, staticProps);
