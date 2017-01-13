@@ -1,11 +1,9 @@
-import assign from './util/assign';
-import typeOf from './util/typeOf';
-import create from './util/create';
-import uuid from './util/uuid';
+import { assign, create, typeOf } from 'z-utils';
 import Event from './Event';
 
-const listenerWrapperSignKey = '__listener_wrapper_' + Date.now() + '_' + uuid() + '__';
+const listenerWrapperSignKey = Symbol('listener');
 var listenerWrapperSignIndex = 0;
+var listenerWrapperSignRedundantIndex = [];
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -61,7 +59,7 @@ function wrapListenerArgs(listenerArgs, limit) {
             listener: null,
             handleEvent: listener,
             limit: limit,
-            [listenerWrapperSignKey]: ++listenerWrapperSignIndex
+            [listenerWrapperSignKey]: listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex
           });
           continue outer;
 
@@ -70,7 +68,7 @@ function wrapListenerArgs(listenerArgs, limit) {
             listener: listener,
             handleEvent: null,
             limit: limit,
-            [listenerWrapperSignKey]: ++listenerWrapperSignIndex
+            [listenerWrapperSignKey]: listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex
           });
           continue outer;
       }
@@ -110,13 +108,14 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this 返回当前对象
    * @api public
    */
-  addListener(evt, ...listenerArgs) {
+  addListener(evt /*, ...listenerArgs*/ ) {
     var events,
       listeners,
       types,
       type,
       i,
       listenerWrappers,
+      listenerArgs = Array.prototype.slice.call(arguments, 1),
       l = listenerArgs.length;
 
     // 必须至少包含两个参数
@@ -203,9 +202,11 @@ Object.assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addOnceListener(evt, ...listenerArgs) {
-    var listenerWrappers = wrapListenerArgs(listenerArgs, 1);
-    return this.addListener(evt, ...listenerWrappers);
+  addOnceListener(evt/*, ...listenerArgs*/) {
+    var listenerArgs = Array.prototype.slice.call(arguments, 1),
+      listenerWrappers = wrapListenerArgs(listenerArgs, 1);
+    return this.addListener.apply(this, [evt].concat(listenerWrappers));
+    // return this.addListener(evt, ...listenerWrappers);
   },
 
   /**
@@ -221,9 +222,11 @@ Object.assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addOnlimitListener(evt, limit, ...listenerArgs) {
-    var listenerWrappers = wrapListenerArgs(listenerArgs, limit);
-    return this.addListener(evt, ...listenerWrappers);
+  addOnlimitListener(evt, limit/*, ...listenerArgs*/) {
+    var listenerArgs = Array.prototype.slice.call(arguments, 2),
+      listenerWrappers = wrapListenerArgs(listenerArgs, limit);
+    return this.addListener.apply(this, [evt].concat(listenerWrappers));
+    // return this.addListener(evt, ...listenerWrappers);
   },
 
   /**
@@ -239,7 +242,7 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  removeListener(evt, ...listenerArgs) {
+  removeListener(evt/*, ...listenerArgs*/) {
     var events = this._events,
       listenerWrappers,
       types,
@@ -249,6 +252,7 @@ Object.assign(EventEmitter.prototype, {
     if (!evt || !events) {
       return this;
     }
+    var listenerArgs = Array.prototype.slice.call(arguments, 1);
 
     switch (typeof evt) {
       // 若为事件名
@@ -297,6 +301,7 @@ Object.assign(EventEmitter.prototype, {
       if (l) {
         do {
           if ((index = indexOfListener(listenerWrappers, listenerArgs[i])) > -1) {
+            listenerWrapperSignRedundantIndex.push(listenerWrappers[index][listenerWrapperSignKey]);
             listenerWrappers.splice(index, 1);
             // 若数组长度为0，清除队列并返回
             if (!listenerWrappers.length) {
@@ -330,8 +335,10 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  addAllListeners(...listenerArgs) {
-    return this.addListener('*', ...listenerArgs);
+  addAllListeners(/*...listenerArgs*/) {
+    var listenerArgs = Array.prototype.slice.call(arguments);
+    return this.addListener.apply(this, ['*'].concat(listenerArgs));
+    // return this.addListener('*', ...listenerArgs);
   },
 
   /**
@@ -347,8 +354,10 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  removeAllListeners(...listenerArgs) {
-    return this.removeListener('*', ...listenerArgs);
+  removeAllListeners(/*...listenerArgs*/) {
+    var listenerArgs = Array.prototype.slice.call(arguments);
+    return this.removeListener.apply(this, ['*'].concat(listenerArgs));
+    // return this.removeListener('*', ...listenerArgs);
   },
 
   /**
@@ -396,7 +405,7 @@ Object.assign(EventEmitter.prototype, {
           } else {
             types = evt.split(this.eventTypeDelimiter);
             l = types.length;
-            if(l < 2){
+            if (l < 2) {
               emits.call(this, evt, events[evt], args);
               break;
             }
@@ -482,7 +491,6 @@ Object.assign(EventEmitter.prototype, {
     }
   },
 
-
   /**
    * 触发事件冒泡
    *
@@ -522,19 +530,22 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emit(evt, ...args) {
+  emit(evt/*, ...args*/) {
+    var args = Array.prototype.slice.call(arguments, 1);
     return this.emitEvent(evt, args, this, true, true, true);
   },
 
   /**
    * 标准处理事件绑定this上下文
    *
-   * @param {Array} methodNames 可选参数为原型上的方法名集合
+   * @param {Array[String]} methodNames 可选参数为原型上的方法名集合
    * @return {Object} this
    * @api public
    */
-  bindHandleEvent(...methodNames) {
-    this.bind('handleEvent', ...methodNames);
+  bindHandleEvent(/*...methodNames*/) {
+    var methodNames = Array.prototype.slice.call(arguments);
+    this.bind.apply(this, ['handleEvent'].concat(methodNames));
+    // this.bind('handleEvent', ...methodNames);
     return this;
   },
 
@@ -545,14 +556,11 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  bind(...methodNames) {
-    var i = -1,
-      l = methodNames.length,
-      methodName;
-    while (++i < l) {
-      methodName = methodNames[i];
+  bind(/*...methodNames*/) {
+    Array.prototype.forEach.call(arguments, function(methodName){
       typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this));
-    }
+    }, this);
+    return this;
   },
 
   /**
@@ -560,73 +568,6 @@ Object.assign(EventEmitter.prototype, {
    * @type {null|Object} parent 必须是 EventEmitter 的实例
    */
   parent: null,
-
-  /**
-   * 子实例的数组
-   * @type {null|Array[]} 必须是 EventEmitter 的实例数组
-   */
-  children: null,
-
-  /**
-   * 追加子实例
-   * @param  {object} instance 必须是 EventEmitter 的实例
-   * @return {object} instance 参数
-   * @api public
-   */
-  appendChild(instance) {
-    if (!(instance instanceof EventEmitter)) {
-      throw new TypeError(instance + 'is not instanceof EventEmitter.');
-    }
-    if (this.isAncestor(instance, true)) {
-      throw new Error('The new child instance contains this instance.');
-    }
-    this.children || (this.children = []);
-    if (this.children.indexOf(instance) < 0) {
-      if (instance.parent) {
-        instance.parent.removeChild(instance);
-      }
-      this.children.push(instance);
-      instance.parent = this;
-    }
-    return instance;
-  },
-
-  /**
-   * 删除子实例
-   * @param  {object} instance 必须是 EventEmitter 的实例
-   * @return {object} instance 参数
-   * @api public
-   */
-  removeChild(instance) {
-    if (!(instance instanceof EventEmitter)) {
-      throw new TypeError(instance + 'is not instanceof EventEmitter.');
-    }
-    var index;
-    if (this.children && (index = this.children.indexOf(instance)) > -1) {
-      this.children.splice(index, 1);
-      delete instance.parent;
-    } else {
-      throw new Error('The instance to be removed is not a child of this instance.');
-    }
-    return instance;
-  },
-
-  /**
-   * 判断是否为祖先实例
-   * @param  {object} instance 必须是 EventEmitter 的实例
-   * @param  {boolean} includeSelf 指定是否包含自身
-   * @return {boolean}
-   * @api public
-   */
-  isAncestor(instance, includeSelf) {
-    var parent = includeSelf ? this : this.parent;
-    do {
-      if (instance === parent) {
-        return true;
-      }
-    } while (parent = parent.parent);
-    return false;
-  }
 
 });
 
@@ -638,10 +579,10 @@ Object.assign(EventEmitter, {
 
 /**
  * 继承给指定的类
- * @param  {function} constructor 构造函数
- * @param  {object} protoProps 原型方法集
- * @param  {object} staticProps 静态方法集
- * @return {function} constructor 参数
+ * @param  {Function} constructor 构造函数
+ * @param  {Object} protoProps 原型方法集
+ * @param  {Object} staticProps 静态方法集
+ * @return {Function} constructor 参数
  */
 function inherito(constructor, protoProps, staticProps) {
   // 原型继承并扩展成员

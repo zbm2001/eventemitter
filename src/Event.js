@@ -1,4 +1,4 @@
-import assign from './util/assign';
+import { assign } from 'z-utils';
 
 /**
  * 事件对象构造器

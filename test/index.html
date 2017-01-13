@@ -2,11 +2,11 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>日期对象扩展 datejs</title>
+<title>事件触发器类 EventEmitter</title>
 <style>
 pre{ padding: 10px 20px; border:1px solid #666; border-radius:3px; font: .9em/1.5em Gotham, "Helvetica Neue", Helvetica, Arial, sans-serif; }
 </style>
-<script src="../date.js"></script>
+<script src="../EventEmitter.js"></script>
 <script>
 (function(){
 this.writeForin = function(obj, name){
@@ -26,33 +26,34 @@ this.writeForin = function(obj, name){
 <body>
 <h2>Quick start</h2>
 <pre>
-// 创建一个日期对象
-var date = new Date();
+// 创建一个事件触发器的实例
+function Foo(){}
+EventEmitter.inherito(Foo);
+var foo = new Foo();
 
-// 默认输出：
-date -> Fri Aug 26 2016 10:45:58 GMT+0800 (中国标准时间)
+foo instanceof EventEmitter; //=> true
 
-// 格式化为时间字符串输出：
-date.format() -> "2016-08-26 10:45:58 812"
+// 注册事件侦听器：
+foo.on('hint', function(e){
+	console.log(e.type)
+});
 
-// 获取本季度的天数：
-date.getQuarterDays() -> 92
+// 触发事件:
+foo.emit('hint');
 
-// 设置日期的时间为零点 00:00:00 000，返回毫秒数：
-date.setTimeToFirst() -> 1472140800000
+// 删除事件侦听器:
+foo.off('hint');
 
-// 零点时间格式化为时间字符串输出：
-date.format() -> "2016-08-26 00:00:00 000"
 </pre>
 
-<h2>Date原型方法和属性</h2>
+<h2>EventEmitter原型方法和属性</h2>
 <script>
-writeForin(Date.prototype, 'date');
+writeForin(EventEmitter.prototype, 'eventEmitter');
 </script>
 
-<h2>Date静态方法和属性</h2>
+<h2>EventEmitter静态方法和属性</h2>
 <script>
-writeForin(Date, 'Date');
+writeForin(EventEmitter, 'EventEmitter');
 </script>
 </body>
 </html>

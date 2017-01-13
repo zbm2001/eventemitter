@@ -1,65 +1,62 @@
-// 项目下直接命令 node rollup.js
-// import fs from 'fs';
-// import rollup from 'rollup';
-// import buble from 'rollup-plugin-buble';
-// import uglify from 'rollup-plugin-uglify';
+// 项目下直接命令$ node rollup.js
 
 const fs = require('fs');
 const rollup = require('rollup');
-const buble = require('rollup-plugin-buble');
-const uglify = require('rollup-plugin-uglify');
 const uglifyjs = require('uglify-js');
-const package = require('./package.json');
+// const uglify = require('rollup-plugin-uglify');
+const pkg = require('./package.json');
+const rollupConfig = require('./rollup.config.js');
+const rc = {
+  entry: rollupConfig.entry,
+  plugins: rollupConfig.plugins
+};
 
-function minify(code){
-  var minifyOptions = { fromString: true };
+var targets = rollupConfig.targets ? rollupConfig.targets.map(target => ({
+  format: target.format,
+  dest: target.dest
+})) : [{
+  format: rollupConfig.format,
+  dest: rollupConfig.dest
+}];
+
+targets.forEach(function(target) {
+  target.banner = this.banner;
+  target.moduleName = this.moduleName;
+  target.sourceMap = this.sourceMap;
+}, rollupConfig);
+
+/**
+ * JS压缩最小化
+ * @param  {String} code JS代码源文本
+ * @return {String} 返回压缩后的代码文本
+ */
+function minify(code) {
+  var minifyOptions = {
+    fromString: true
+  };
   var result = uglifyjs.minify(code, minifyOptions);
   return result.code;
 }
 
-//var pkg = JSON.parse(fs.readFileSync('./package.json'));
+rollup.rollup(rc).then(bundle => {
 
-const banner = '/*\n' +
-'name,version,description,author,license'.split(',')
-.map((k) => ` * @${k}: ${package[k]}`).join('\n') +
-'\n */';
+  targets.forEach(function(target) {
+    var result = bundle.generate(target);
+    // dest 生成的目标文件
+    fs.writeFileSync(target.dest, result.code);
 
-const outFormat = package.rollupOutFormat || 'amd';
-const srcEntry = { amd: 'core', cjs: 'core', es: 'core', iife: 'index', umd: 'index' }[outFormat];
+    // 若指定压缩最小化文件
+    // if(target.minimize){
+    //   let minMain = target.dest.replace(/(?=\.js$)/, '.min');
+    //   minMain === target.dest && (minMain += '.min');
+    //   fs.writeFileSync( minMain, target.banner + '\n' + minify(result.code) );
+    // }
 
-rollup.rollup({
-  entry: 'src/' + srcEntry + '.js',
-  plugins: [
-    // 结合 buble 比 babel 更快
-    buble({
-      exclude: 'node_modules/**'
-    })
-    // 其他插件，如压缩代码等
-    // ,uglify()
-  ]
-}).then(bundle => {
+  }, bundle);
 
-  var result = bundle.generate({
-    // output format - 'amd', 'cjs', 'es', 'iife', 'umd'
-    format: outFormat,
-    moduleName: package.name, // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
-    sourceMap: false
-  });
 
-  // dest 生成的目标文件
-  fs.writeFileSync( package.name + '.js', banner + '\n' + result.code );
-  fs.writeFileSync( package.name + '.min.js', banner + '\n' + minify(result.code) );
-  
-  
-  // // bundle写入方式
-  // bundle.write({
-  //   // output format - 'amd', 'cjs', 'es6', 'iife', 'umd'
-  //   format: 'iife',
-  //   moduleName: 'Date', // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
-  //   dest: moduleName + '.js',
-  //   banner: banner,
-  //   sourceMap: false
-  // });
+  // bundle写入方式
+  // targets.forEach(bundle.write, bundle);
 
 }).catch(e => {
   process.stderr.write(e.message + '\n');
