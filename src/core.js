@@ -536,23 +536,9 @@ Object.assign(EventEmitter.prototype, {
   },
 
   /**
-   * 标准处理事件绑定this上下文
-   *
-   * @param {Array[String]} methodNames 可选参数为原型上的方法名集合
-   * @return {Object} this
-   * @api public
-   */
-  bindHandleEvent(/*...methodNames*/) {
-    var methodNames = Array.prototype.slice.call(arguments);
-    this.bind.apply(this, ['handleEvent'].concat(methodNames));
-    // this.bind('handleEvent', ...methodNames);
-    return this;
-  },
-
-  /**
    * 原型方法绑定到同名的属性方法，锁定this
    *
-   * @param {Array} methodNames 可选参数为原型上的方法名集合
+   * @param {Array[String]} methodNames 可选参数为原型上的方法名集合
    * @return {Object} this
    * @api public
    */
