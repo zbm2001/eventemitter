@@ -50,6 +50,34 @@ em.off('foo', handleEvent)
 #### 示例
 em.offAll(handleEvent)
 
+### EventEmitter原型方法和属性
+
+eventEmitter._events (属性)
+eventEmitter.eventTypeDelimiter (属性)
+eventEmitter.addListener (方法)
+eventEmitter.on (方法)
+eventEmitter.addOnceListener (方法)
+eventEmitter.once (方法)
+eventEmitter.addLimitListener (方法)
+eventEmitter.onlimit (方法)
+eventEmitter.removeListener (方法)
+eventEmitter.off (方法)
+eventEmitter.addAllListeners (方法)
+eventEmitter.onAll (方法)
+eventEmitter.removeAllListeners (方法)
+eventEmitter.offAll (方法)
+eventEmitter.emitEvent (方法)
+eventEmitter.emitEventPropagation (方法)
+eventEmitter.createEvent (方法)
+eventEmitter.emit (方法)
+eventEmitter.bind (方法)
+eventEmitter.parent (属性)
+
+### EventEmitter静态方法和属性
+
+EventEmitter.inherito (方法)
+EventEmitter.Event (方法)
+
 ## 组件构建
 
 ### 从配置文件构建（rollup.config.js）

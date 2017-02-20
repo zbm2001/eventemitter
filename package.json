@@ -1,6 +1,6 @@
 {
-  "name": "z-EventEmitter",
-  "version": "1.0.1",
+  "name": "z-eventemitter",
+  "version": "1.0.0",
   "description": "javascript EventEmitter",
   "scripts": {
     "build": "rollup -c",
@@ -36,10 +36,14 @@
   },
   "homepage": "https://github.com/zbm2001/EventEmitter#readme",
   "devDependencies": {
-    "rollup": "^0.37.2",
+    "rollup": "^0.41.4",
+    "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-buble": "^0.15.0",
+    "rollup-plugin-commonjs": "^7.0.0",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-uglify": "^1.0.1",
     "uglify-js": "^2.7.5",
-    "z-utils": "^1.1.0"
+    "z-utils": "^1.1.3"
   }
 }

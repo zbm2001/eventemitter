@@ -1,13 +1,137 @@
 /*
- * @name: z-EventEmitter
- * @version: 1.0.1
+ * @name: z-eventemitter
+ * @version: 1.0.0
  * @description: javascript EventEmitter
  * @author: zbm2001@aliyun.com
  * @license: Apache 2.0
  */
 'use strict';
 
-var zUtils = require('z-utils');
+const toString = Object.prototype.toString;
+
+/**
+ * judge a object type name
+ *
+ * @param  {Object|Null|Undefined|String|Number|Function|Array|RegExp|HTMLDocument|HTMLHtmlElement|NodeList|XMLHttpRequest|...} object any
+ * @return {String} string of type name, initials Capitalized
+ */
+function typeOf(object) {
+  return toString.call(object).slice(8, -1)
+}
+
+const sNativeCode = (s => s.slice(s.indexOf('{')))(isNaN + '');
+/**
+ * test function is a javascript native method
+ *
+ * @param {Function} func native function of javascript
+ * @return {Boolean}
+ */
+function isNativeFunction(func) {
+  return typeOf(func) === 'Function' && sNativeCode === (func += '').slice(func.indexOf('{'))
+}
+
+if (!isNativeFunction(Object.assign)) {
+  /**
+   * polyfill es2015 Object.assign
+   *
+   * @param {Object} target
+   * @returns {Object} target
+   */
+  Object.assign = function assign(target/*, ...args*/) {
+    if (target == null) {
+      throw new TypeError('Cannot convert undefined or null to object')
+    }
+
+    let output = Object(target),
+        i = -1,
+        args = Array.prototype.slice.call(arguments, 1),
+        l = args.length;
+
+    while (++i < l) {
+      let source = args[i];
+
+      if (source) {
+        for (let prop in source) {
+          if (source.hasOwnProperty(prop)) {
+            output[prop] = source[prop];
+          }
+        }
+      }
+    }
+    return output
+  };
+}
+
+var assign = Object.assign;
+
+if (!isNativeFunction(Object.create)) {
+
+  const hasOwnProperty = Object.prototype.hasOwnProperty;
+  const REFERENCE_TYPE = {
+    'object': !0,
+    'function': !0
+  };
+
+  /**
+   * polyfill es5 Object.create
+   *
+   * @param {Object} object
+   * @param {Object} props
+   * @returns {Object} like {__proto__: *}
+   */
+  Object.create = function create(object, props) {
+    if (object == null || !REFERENCE_TYPE[typeof object]) {
+      throw 'Object prototype may only be an Object or null'
+    }
+
+    let proto = {__proto__: object};
+
+    if (props) {
+      if (REFERENCE_TYPE[typeof props]) {
+        for (let propName in props) {
+          if (hasOwnProperty.call(props, propName)) {
+            let prop = props[propName];
+
+            if (prop && REFERENCE_TYPE[typeof prop]) {
+              object[propName] = prop.value;
+            } else {
+              throw 'Property description must be an object: value'
+            }
+          }
+        }
+      }
+    }
+    return proto
+  };
+}
+
+var create = Object.create;
+
+/**
+ * 全局唯一标识符（GUID，Globally Unique Identifier）也称作 UUID(Universally Unique IDentifier) 。
+ * GUID是一种由算法生成的二进制长度为128位的数字标识符。
+ * GUID 的格式为“xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx”，其中的 x 是 0-9 或 a-f 范围内的一个32位十六进制数。
+ * 在理想情况下，任何计算机和计算机集群都不会生成两个相同的GUID。
+ * GUID 的总数达到了2^128（3.4×10^38）个，所以随机生成两个相同GUID的可能性非常小，但并不为0。
+ * GUID一词有时也专指微软对UUID标准的实现。
+ */
+
+/**
+ * string of 4 chars
+ *
+ * return {String} length{4} 0-9 or a-f 范围内的一个32位十六进制数
+ */
+function S4() {
+  return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1)
+}
+
+/**
+ * 生成一个全局唯一标识符
+ * @return {String} length{36} 返回格式为：“xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx” 的字符串
+ */
+function uuid() {
+  return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4())
+}
 
 /**
  * 事件对象构造器
@@ -16,9 +140,10 @@ var zUtils = require('z-utils');
  * @return {Object} event object.
  * @api private
  */
-function Event() {}
+function Event () {
+}
 
-Object.assign(Event.prototype, {
+assign(Event.prototype, {
   // 事件类型
   type: '',
   // 捕获阶段
@@ -52,7 +177,7 @@ Object.assign(Event.prototype, {
    * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
    * @api public
    */
-  initEvent: function initEvent(type, currentTarget, target, bubbles, cancelable) {
+  initEvent: function initEvent (type, currentTarget, target, bubbles, cancelable) {
     this.type = type;
     this.currentTarget = currentTarget;
     this.target = target || currentTarget;
@@ -67,7 +192,7 @@ Object.assign(Event.prototype, {
     if (!this.cancelable) {
       this.preventDefault = returnFalse;
     }
-    return this;
+    return this
   },
 
   /**
@@ -75,10 +200,10 @@ Object.assign(Event.prototype, {
    *
    * @api public
    */
-  preventDefault: function preventDefault() {
+  preventDefault: function preventDefault () {
     this.preventDefault = this.isDefaultPrevented = returnTrue;
     this.returnValue = false;
-    return true;
+    return true
   },
 
   isDefaultPrevented: returnFalse,
@@ -88,10 +213,10 @@ Object.assign(Event.prototype, {
    *
    * @api public
    */
-  stopPropagation: function stopPropagation() {
+  stopPropagation: function stopPropagation () {
     this.stopPropagation = this.isPropagationStopped = returnTrue;
     this.cancelBubble = true;
-    return true;
+    return true
   },
 
   isPropagationStopped: returnFalse,
@@ -101,18 +226,25 @@ Object.assign(Event.prototype, {
    *
    * @api public
    */
-  stopImmediatePropagation: function stopImmediatePropagation() {
+  stopImmediatePropagation: function stopImmediatePropagation () {
     this.stopPropagation();
     this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue;
-    return true;
+    return true
   },
 
   isImmediatePropagationStopped: returnFalse
 
 });
 
+function returnTrue () {
+  return true
+}
 
-Object.assign(Event, {
+function returnFalse () {
+  return false
+}
+
+var Event$1 = assign(Event, {
 
   // 捕获阶段
   CAPTURING_PHASE: 1,
@@ -124,15 +256,7 @@ Object.assign(Event, {
   returnFalse: returnFalse
 });
 
-function returnTrue() {
-  return true;
-}
-
-function returnFalse() {
-  return false;
-}
-
-var listenerWrapperSignKey = Symbol('listener');
+var listenerWrapperSignKey = uuid();
 var listenerWrapperSignIndex = 0;
 var listenerWrapperSignRedundantIndex = [];
 
@@ -144,7 +268,7 @@ var listenerWrapperSignRedundantIndex = [];
  * @return {Number} 返回索引，-1表示未找到
  * @api private
  */
-function indexOfListener(listeners, listener) {
+function indexOfListener (listeners, listener) {
   var i = listeners.length;
   if (listener) {
     switch (typeof listener) {
@@ -162,10 +286,10 @@ function indexOfListener(listeners, listener) {
             return i;
           }
         }
-        return -1;
+        return -1
     }
   }
-  return -1;
+  return -1
 }
 
 /**
@@ -175,11 +299,11 @@ function indexOfListener(listeners, listener) {
  * @return {Array[Object]} 返回一个新的包装后的对象数组
  * @api private
  */
-function wrapListenerArgs(listenerArgs, limit) {
+function wrapListenerArgs (listenerArgs, limit) {
   var i = 0,
-    l = listenerArgs.length,
-    listenerWrappers = [],
-    listener;
+      l = listenerArgs.length,
+      listenerWrappers = [],
+      listener;
   typeof limit !== 'number' && (limit = Infinity);
   outer: while (++i < l) {
     listener = listenerArgs[i];
@@ -192,20 +316,20 @@ function wrapListenerArgs(listenerArgs, limit) {
             limit: limit
           }, obj[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj ));
       var obj;
-          continue outer;
+          continue outer
 
         case 'object':
           listenerWrappers.push(listener[listenerWrapperSignKey] ? listener : ( obj$1 = {
-            listener: listener,
-            handleEvent: null,
-            limit: limit
-          }, obj$1[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj$1 ));
+                listener: listener,
+                handleEvent: null,
+                limit: limit
+              }, obj$1[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj$1 ));
       var obj$1;
-          continue outer;
+          continue outer
       }
     }
   }
-  return listenerWrappers;
+  return listenerWrappers
 }
 
 /**
@@ -216,13 +340,15 @@ function wrapListenerArgs(listenerArgs, limit) {
  * @return {Function} 返回闭包函数
  * @api private
  */
-function alias(name) {
-  return function aliasClosure() {
-    return this[name].apply(this, arguments);
+function alias (name) {
+  return function aliasClosure () {
+    return this[name].apply(this, arguments)
   }
 }
 
-Object.assign(EventEmitter.prototype, {
+function EventEmitter () {}
+
+assign(EventEmitter.prototype, {
 
   _events: null,
 
@@ -239,26 +365,26 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this 返回当前对象
    * @api public
    */
-  addListener: function addListener(evt /*, ...listenerArgs*/ ) {
+  addListener: function addListener(evt /*, ...listenerArgs*/) {
     var events,
-      listeners,
-      types,
-      type,
-      i,
-      listenerWrappers,
-      listenerArgs = Array.prototype.slice.call(arguments, 1),
-      l = listenerArgs.length;
+        listeners,
+        types,
+        type,
+        i,
+        listenerWrappers,
+        listenerArgs = Array.prototype.slice.call(arguments, 1),
+        l = listenerArgs.length;
 
     // 必须至少包含两个参数
     if (!evt || !l) {
-      return this;
+      return this
     }
 
     events = this._events;
     listenerWrappers = wrapListenerArgs(listenerArgs);
 
     switch (typeof evt) {
-      // 若为事件名
+        // 若为事件名
       case 'string':
         // 若为通配符
         if (evt === '*') {
@@ -290,7 +416,7 @@ Object.assign(EventEmitter.prototype, {
             }
           }
         }
-        break;
+        break
 
       default:
         // 若包含一个类正则匹配的 test 方法
@@ -309,9 +435,9 @@ Object.assign(EventEmitter.prototype, {
 
     listenerWrappers.emittingIndex = -1;
 
-    return this;
+    return this
 
-    function adds() {
+    function adds () {
       var i = -1;
       while (++i < l) {
         if (indexOfListener(listeners, listenerWrappers[i].listener || listenerWrappers[i].handleEvent) < 0) {
@@ -335,9 +461,9 @@ Object.assign(EventEmitter.prototype, {
    */
   addOnceListener: function addOnceListener(evt/*, ...listenerArgs*/) {
     var listenerArgs = Array.prototype.slice.call(arguments, 1),
-      listenerWrappers = wrapListenerArgs(listenerArgs, 1);
-    return this.addListener.apply(this, [evt].concat(listenerWrappers));
-    // return this.addListener(evt, ...listenerWrappers);
+        listenerWrappers = wrapListenerArgs(listenerArgs, 1);
+    return this.addListener.apply(this, [evt].concat(listenerWrappers))
+    // return this.addListener(evt, ...listenerWrappers)
   },
 
   /**
@@ -353,17 +479,17 @@ Object.assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addOnlimitListener: function addOnlimitListener(evt, limit/*, ...listenerArgs*/) {
+  addLimitListener: function addLimitListener(evt, limit/*, ...listenerArgs*/) {
     var listenerArgs = Array.prototype.slice.call(arguments, 2),
-      listenerWrappers = wrapListenerArgs(listenerArgs, limit);
-    return this.addListener.apply(this, [evt].concat(listenerWrappers));
-    // return this.addListener(evt, ...listenerWrappers);
+        listenerWrappers = wrapListenerArgs(listenerArgs, limit);
+    return this.addListener.apply(this, [evt].concat(listenerWrappers))
+    // return this.addListener(evt, ...listenerWrappers)
   },
 
   /**
-   * addOnlimitListener 别名方法
+   * addLimitListener 别名方法
    */
-  onlimit: alias('addOnlimitListener'),
+  onlimit: alias('addLimitListener'),
 
   /**
    * 删除事件定义的事件
@@ -377,18 +503,17 @@ Object.assign(EventEmitter.prototype, {
     var this$1 = this;
 
     var events = this._events,
-      listenerWrappers,
-      types,
-      l,
-      type;
+        types,
+        l,
+        type;
 
     if (!evt || !events) {
-      return this;
+      return this
     }
     var listenerArgs = Array.prototype.slice.call(arguments, 1);
 
     switch (typeof evt) {
-      // 若为事件名
+        // 若为事件名
       case 'string':
         // 若为通配符
         if (evt === '*') {
@@ -406,7 +531,7 @@ Object.assign(EventEmitter.prototype, {
             }
           }
         }
-        break;
+        break
 
       default:
         // 若包含一个类正则匹配的 test 方法
@@ -421,16 +546,16 @@ Object.assign(EventEmitter.prototype, {
     }
     // 若还存在事件队列，直接返回
     for (type in events) {
-      return this$1;
+      return this$1
     }
     // 否则，清除事件对象
     delete this._events;
-    return this;
+    return this
 
-    function filter(events, type, listenerArgs) {
+    function filter (events, type, listenerArgs) {
       var l = listenerArgs.length,
-        i = 0,
-        listenerWrappers = events[type];
+          i = 0,
+          listenerWrappers = events[type];
       if (l) {
         do {
           if ((index = indexOfListener(listenerWrappers, listenerArgs[i])) > -1) {
@@ -439,12 +564,12 @@ Object.assign(EventEmitter.prototype, {
             // 若数组长度为0，清除队列并返回
             if (!listenerWrappers.length) {
               delete events[type];
-              return;
+              return
             }
             // 若事件触发索引不小于删除的事件索引，减计事件触发索引
             listenerWrappers.emittingIndex < index || listenerWrappers.emittingIndex--;
           }
-        } while (++i < l);
+        } while (++i < l)
       } else {
         listenerWrappers.length = 0;
         delete events[type];
@@ -470,8 +595,8 @@ Object.assign(EventEmitter.prototype, {
    */
   addAllListeners: function addAllListeners(/*...listenerArgs*/) {
     var listenerArgs = Array.prototype.slice.call(arguments);
-    return this.addListener.apply(this, ['*'].concat(listenerArgs));
-    // return this.addListener('*', ...listenerArgs);
+    return this.addListener.apply(this, ['*'].concat(listenerArgs))
+    // return this.addListener('*', ...listenerArgs)
   },
 
   /**
@@ -489,8 +614,8 @@ Object.assign(EventEmitter.prototype, {
    */
   removeAllListeners: function removeAllListeners(/*...listenerArgs*/) {
     var listenerArgs = Array.prototype.slice.call(arguments);
-    return this.removeListener.apply(this, ['*'].concat(listenerArgs));
-    // return this.removeListener('*', ...listenerArgs);
+    return this.removeListener.apply(this, ['*'].concat(listenerArgs))
+    // return this.removeListener('*', ...listenerArgs)
   },
 
   /**
@@ -514,15 +639,15 @@ Object.assign(EventEmitter.prototype, {
     var this$1 = this;
 
     var events = this._events,
-      listenerWrappers,
-      i,
-      l,
-      types,
-      type,
-      event = null;
+        listenerWrappers,
+        i,
+        l,
+        types,
+        type,
+        event = null;
 
     if (!evt) {
-      return event;
+      return event
     }
 
     target || (target = this);
@@ -542,7 +667,7 @@ Object.assign(EventEmitter.prototype, {
             l = types.length;
             if (l < 2) {
               emits.call(this, evt, events[evt], args);
-              break;
+              return event
             }
             i = -1;
             while (++i < l) {
@@ -550,7 +675,7 @@ Object.assign(EventEmitter.prototype, {
               this$1.emitEventPropagation(event);
             }
           }
-          break;
+          return event
 
         default:
           // 若包含一个类正则匹配的 test 方法
@@ -567,15 +692,15 @@ Object.assign(EventEmitter.prototype, {
       this.parent.emitEvent(evt, args, target, bubbles, cancelable, returnValue);
     }
 
-    return event;
+    return event
 
-    function emits(type, listenerWrappers, args) {
+    function emits (type, listenerWrappers, args) {
       var this$1 = this;
 
       var listenerWrapper,
-        handleEvent,
-        context,
-        response;
+          handleEvent,
+          context,
+          response;
 
       listenerWrappers.emittingIndex = -1;
       event = this.createEvent(type, args, target, bubbles, cancelable, returnValue);
@@ -586,32 +711,32 @@ Object.assign(EventEmitter.prototype, {
         handleEvent = listenerWrapper.handleEvent || context.handleEvent;
 
         switch (args.length) {
-          // fast cases
+            // fast cases
           case 0:
             response = handleEvent.call(context, event);
-            break;
+            break
           case 1:
             response = handleEvent.call(context, event, args[0]);
-            break;
+            break
           case 2:
             response = handleEvent.call(context, event, args[0], args[1]);
-            break;
+            break
           case 3:
             response = handleEvent.call(context, event, args[0], args[1], args[2]);
-            break;
+            break
             // slower
           default:
             response = handleEvent.apply(context, [event].concat(args));
         }
 
         switch (response) {
-          // 返回值为假，就跳出循环，中断后续事件队列的执行
+            // 返回值为假，就跳出循环，中断后续事件队列的执行
           case false:
-            break outer;
+            break outer
             // 返回值为真，则删除当前侦听器，及只执行一次当前事件
           case true:
             this$1.removeListener(type, listenerWrapper);
-            break;
+            break
           default:
             // 若执行次数限制为零，则删除当前侦听器
             --listenerWrapper.limit || this$1.removeListener(type, listenerWrapper);
@@ -619,7 +744,7 @@ Object.assign(EventEmitter.prototype, {
 
         // 若已终止事件队列后续执行及事件冒泡
         if (event.isImmediatePropagationStopped()) {
-          break;
+          break
         }
       }
 
@@ -652,11 +777,11 @@ Object.assign(EventEmitter.prototype, {
    * @api private
    */
   createEvent: function createEvent(type, target, bubbles, cancelable, emitArgs, returnValue) {
-    var event = new Event();
+    var event = new Event$1();
     event.initEvent(type, this, target, bubbles, cancelable);
     event.emitArgs = emitArgs;
     returnValue || event.preventDefault();
-    return event;
+    return event
   },
 
   /**
@@ -667,9 +792,9 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emit: function emit(evt/*, ...args*/) {
+  emit: function emit (evt/*, ...args*/) {
     var args = Array.prototype.slice.call(arguments, 1);
-    return this.emitEvent(evt, args, this, true, true, true);
+    return this.emitEvent(evt, args, this, true, true, true)
   },
 
   /**
@@ -679,11 +804,11 @@ Object.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  bind: function bind(/*...methodNames*/) {
-    Array.prototype.forEach.call(arguments, function(methodName){
+  bind: function bind (/*...methodNames*/) {
+    Array.prototype.forEach.call(arguments, function (methodName) {
       typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this));
     }, this);
-    return this;
+    return this
   },
 
   /**
@@ -694,12 +819,6 @@ Object.assign(EventEmitter.prototype, {
 
 });
 
-// 静态成员扩展
-Object.assign(EventEmitter, {
-  inherito: inherito,
-  Event: Event
-});
-
 /**
  * 继承给指定的类
  * @param  {Function} constructor 构造函数
@@ -707,16 +826,22 @@ Object.assign(EventEmitter, {
  * @param  {Object} staticProps 静态方法集
  * @return {Function} constructor 参数
  */
-function inherito(constructor, protoProps, staticProps) {
+function inherito (constructor, protoProps, staticProps) {
   // 原型继承并扩展成员
-  Object.assign(constructor.prototype = Object.create(this.prototype), {
+  assign(constructor.prototype = create(this.prototype), {
     constructor: constructor
   }, protoProps);
 
   constructor.inherito = inherito;
 
   // 静态成员扩展
-  return Object.assign(constructor, staticProps);
+  return assign(constructor, staticProps)
 }
 
-module.exports = EventEmitter;
+// 静态成员扩展
+var core = assign(EventEmitter, {
+  inherito: inherito,
+  Event: Event$1
+});
+
+module.exports = core;

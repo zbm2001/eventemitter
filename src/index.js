@@ -1,4 +1,1 @@
-import 'z-utils'
-import EventEmitter from './core'
-
-export default EventEmitter
+export {default} from './core'

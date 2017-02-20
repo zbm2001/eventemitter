@@ -1,4 +1,4 @@
-import { assign } from 'z-utils';
+import {assign} from 'z-utils/src'
 
 /**
  * 事件对象构造器
@@ -7,9 +7,10 @@ import { assign } from 'z-utils';
  * @return {Object} event object.
  * @api private
  */
-function Event() {};
+function Event () {
+};
 
-Object.assign(Event.prototype, {
+assign(Event.prototype, {
   // 事件类型
   type: '',
   // 捕获阶段
@@ -43,22 +44,22 @@ Object.assign(Event.prototype, {
    * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
    * @api public
    */
-  initEvent(type, currentTarget, target, bubbles, cancelable) {
-    this.type = type;
-    this.currentTarget = currentTarget;
-    this.target = target || currentTarget;
-    this.timeStamp = Date.now();
+  initEvent (type, currentTarget, target, bubbles, cancelable) {
+    this.type = type
+    this.currentTarget = currentTarget
+    this.target = target || currentTarget
+    this.timeStamp = Date.now()
     this.bubbles = !!bubbles;
-    this.cancelable = !!cancelable;
+    this.cancelable = !!cancelable
     if (!this.bubbles) {
-      this.cancelBubble = true;
-      this.stopPropagation = returnFalse;
-      this.isPropagationStopped = returnTrue;
+      this.cancelBubble = true
+      this.stopPropagation = returnFalse
+      this.isPropagationStopped = returnTrue
     }
     if (!this.cancelable) {
-      this.preventDefault = returnFalse;
+      this.preventDefault = returnFalse
     }
-    return this;
+    return this
   },
 
   /**
@@ -66,10 +67,10 @@ Object.assign(Event.prototype, {
    *
    * @api public
    */
-  preventDefault() {
-    this.preventDefault = this.isDefaultPrevented = returnTrue;
-    this.returnValue = false;
-    return true;
+  preventDefault () {
+    this.preventDefault = this.isDefaultPrevented = returnTrue
+    this.returnValue = false
+    return true
   },
 
   isDefaultPrevented: returnFalse,
@@ -79,10 +80,10 @@ Object.assign(Event.prototype, {
    *
    * @api public
    */
-  stopPropagation() {
-    this.stopPropagation = this.isPropagationStopped = returnTrue;
-    this.cancelBubble = true;
-    return true;
+  stopPropagation () {
+    this.stopPropagation = this.isPropagationStopped = returnTrue
+    this.cancelBubble = true
+    return true
   },
 
   isPropagationStopped: returnFalse,
@@ -92,18 +93,25 @@ Object.assign(Event.prototype, {
    *
    * @api public
    */
-  stopImmediatePropagation() {
-    this.stopPropagation();
-    this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue;
-    return true;
+  stopImmediatePropagation () {
+    this.stopPropagation()
+    this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue
+    return true
   },
 
   isImmediatePropagationStopped: returnFalse
 
-});
+})
 
+function returnTrue () {
+  return true
+}
 
-Object.assign(Event, {
+function returnFalse () {
+  return false
+}
+
+export default assign(Event, {
 
   // 捕获阶段
   CAPTURING_PHASE: 1,
@@ -111,16 +119,6 @@ Object.assign(Event, {
   AT_TARGET: 2,
   // 冒泡阶段
   BUBBLING_PHASE: 3,
-  returnTrue: returnTrue,
-  returnFalse: returnFalse
-});
-
-function returnTrue() {
-  return true;
-}
-
-function returnFalse() {
-  return false;
-}
-
-export default Event;
+  returnTrue,
+  returnFalse
+})
