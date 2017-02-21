@@ -1,6 +1,6 @@
 {
   "name": "z-eventemitter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "javascript EventEmitter",
   "scripts": {
     "build": "rollup -c",
