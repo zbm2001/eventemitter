@@ -1,59 +1,87 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>事件触发器类 EventEmitter</title>
-<style>
-pre{ padding: 10px 20px; border:1px solid #666; border-radius:3px; font: .9em/1.5em Gotham, "Helvetica Neue", Helvetica, Arial, sans-serif; }
-</style>
-<script src="../index.js"></script>
-<script>
-(function(){
-this.writeForin = function(obj, name){
-  var html = '<ul><li>' + 
-  Object.keys(obj).map(function(key){
-    return name + '.' + key + 
-    ' (' + (typeof obj[key] == 'function' ? '方法' : '属性') + ')';
-  }).join('</li><li>') + 
-  '</li></ul>';
+  <meta charset="utf-8">
+  <title>事件触发器类 EventEmitter</title>
+  <style>
+    body, pre{
+      font: 1em/1.5em "Microsoft YaHei", "FangSong", "STXihei", "STHeiti";
+    }
+    pre {
+      padding: 10px 20px;
+      border: 1px solid #666;
+      border-radius: 3px;
+    }
+  </style>
+  <script src="../index.js"></script>
+  <script>
+    (function () {
+      document.writeForin = function (obj, name) {
+        var html = '<ul><li>' +
+            Object.keys(obj).map(function (key) {
+              var value = obj[key],
+                  valueStr = ''
 
-  document.write(html);
-}
-})();
-</script>
+              switch (typeof value) {
+                case 'object':
+                  if (value) {
+                    valueStr = value.constructor.name
+                  } else {
+                    valueStr = 'null'
+                  }
+                  break
+                case 'function':
+                  valueStr = value.name + '()'
+                  break
+                default:
+                  valueStr = value + ''
+              }
+
+              return name + '.' + key + ': ' + valueStr
+
+            }).join('</li><li>') +
+            '</li></ul>'
+
+        document.write(html)
+      }
+
+      document.writeForinConstructor = function (func, isPrototype) {
+        var name = func.name
+        if (isPrototype) {
+          this.writeForin(func.prototype, name.charAt(0).toLowerCase() + name.slice(1))
+        } else {
+          this.writeForin(func, name)
+        }
+      }
+    })()
+  </script>
 </head>
 
 <body>
 <h2>Quick start</h2>
 <pre>
-// 创建一个事件触发器的实例
-function Foo(){}
-EventEmitter.inherito(Foo);
-var foo = new Foo();
-
-foo instanceof EventEmitter; //=> true
+// 创建一个事件对象
+var eventEmitter = new EventEmitter();
 
 // 注册事件侦听器：
-foo.on('hint', function(e){
-	console.log(e.type)
-});
+eventEmitter.on('do', function(e, arg1){ console.log('do', arg1.text) })
 
-// 触发事件:
-foo.emit('hint');
+// 触发事件：
+eventEmitter.emit('do', {text: 'ok'})
 
 // 删除事件侦听器:
-foo.off('hint');
+eventEmitter.off('do');
 
 </pre>
 
 <h2>EventEmitter原型方法和属性</h2>
 <script>
-writeForin(EventEmitter.prototype, 'eventEmitter');
+  document.writeForinConstructor(EventEmitter, !0)
 </script>
 
 <h2>EventEmitter静态方法和属性</h2>
 <script>
-writeForin(EventEmitter, 'EventEmitter');
+  document.writeForinConstructor(EventEmitter)
 </script>
 </body>
 </html>

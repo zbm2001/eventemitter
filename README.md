@@ -87,3 +87,15 @@ npm run build // rollup -c
 
 ### 自定义构建
 npm run build:js // node rollup
+
+### 文档生成
+npm install -global esdoc
+echo '{"source": "./src", "destination": "./doc"}' > .esdoc.json
+esdoc
+#### 文档
+doc/index.html
+
+或者：
+
+### dox
+[https://github.com/tj/dox](https://github.com/tj/dox)

@@ -3,8 +3,10 @@ logs
 *.log
 npm-debug.log*
 
+# esdoc
+.esdoc.json
+doc/
+
 node_modules/
 .project
 .idea
-rollup.config.js
-rollup.js
