@@ -1,6 +1,6 @@
 /*
  * @name: z-eventemitter
- * @version: 1.0.0
+ * @version: 1.0.3
  * @description: javascript EventEmitter
  * @author: zbm2001@aliyun.com
  * @license: Apache 2.0
@@ -19,7 +19,7 @@ function typeOf(object) {
   return toString.call(object).slice(8, -1)
 }
 
-const sNativeCode = (s => s.slice(s.indexOf('{')))(isNaN + '');
+const sNativeCode = (isNaN + '').slice((isNaN + '').indexOf('{'));
 /**
  * test function is a javascript native method
  *
