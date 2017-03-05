@@ -86,7 +86,7 @@ npm run build // rollup -c
 或者：
 
 ### 自定义构建
-npm run build:js // node rollup
+npm run dev // node rollup
 
 ### 文档生成
 npm install -global esdoc
