@@ -1,4 +1,4 @@
-import {assign, create, uuid} from 'z-utils/src'
+import {assign, create, uuid} from 'z-utils'
 import Event from './Event'
 
 const listenerWrapperSignKey = uuid()
@@ -576,6 +576,8 @@ function inherito (constructor, protoProps, staticProps) {
   // 静态成员扩展
   return assign(constructor, staticProps)
 }
+
+export {Event, inherito}
 
 // 静态成员扩展
 export default assign(EventEmitter, {

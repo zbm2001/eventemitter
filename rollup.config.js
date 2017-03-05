@@ -1,6 +1,6 @@
 // 项目下直接运行命令 rollup -c
 
-//const babel = require('rollup-plugin-babel')
+const babel = require('rollup-plugin-babel')
 const buble = require('rollup-plugin-buble')
 const resolve = require('rollup-plugin-node-resolve')
 const commonjs = require('rollup-plugin-commonjs')
@@ -9,18 +9,18 @@ const pkg = require('./package.json')
 const banner = '/*\n' +
     'name,version,description,author,license'.split(',')
         .map((k) => ` * @${k}: ${pkg[k]}`).join('\n') +
-'\n */'
+    '\n */'
 const external = Object.keys(pkg.devDependencies)
 
 module.exports = {
   entry: 'src/index.js',
   plugins: [
-    resolve({
-      jsnext: true,
-      main: true,
-      browser: true,
-    }),
-    commonjs(),
+    // resolve({
+    //   jsnext: true,
+    //   main: true,
+    //   browser: true,
+    // }),
+    // commonjs(),
     // babel 遵循 es2015+ 标准，但执行较慢
     // babel({
     //   exclude: 'node_modules/**'
@@ -35,7 +35,7 @@ module.exports = {
     })
   ],
   external: external,
-  targets: [ // 多文件生成有BUG ！！var a,b; => var a; var b; var var a; var var b; ......
+  targets: [
     {
       dest: 'index.js',
       format: 'cjs'

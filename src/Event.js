@@ -1,4 +1,4 @@
-import {assign} from 'z-utils/src'
+import {assign, returnFalse, returnTrue} from 'z-utils'
 
 /**
  * 事件对象构造器
@@ -7,8 +7,7 @@ import {assign} from 'z-utils/src'
  * @return {Object} event object.
  * @api private
  */
-function Event () {
-};
+function Event () {}
 
 assign(Event.prototype, {
   // 事件类型
@@ -49,7 +48,7 @@ assign(Event.prototype, {
     this.currentTarget = currentTarget
     this.target = target || currentTarget
     this.timeStamp = Date.now()
-    this.bubbles = !!bubbles;
+    this.bubbles = !!bubbles
     this.cancelable = !!cancelable
     if (!this.bubbles) {
       this.cancelBubble = true
@@ -103,22 +102,11 @@ assign(Event.prototype, {
 
 })
 
-function returnTrue () {
-  return true
-}
-
-function returnFalse () {
-  return false
-}
-
 export default assign(Event, {
-
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上
   AT_TARGET: 2,
   // 冒泡阶段
-  BUBBLING_PHASE: 3,
-  returnTrue,
-  returnFalse
+  BUBBLING_PHASE: 3
 })

@@ -1,10 +1,10 @@
 {
   "name": "z-eventemitter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "javascript EventEmitter",
   "scripts": {
+    "dev": "node rollup",
     "build": "rollup -c",
-    "build:js": "node rollup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -43,7 +43,9 @@
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-uglify": "^1.0.1",
-    "uglify-js": "^2.7.5",
-    "z-utils": "^1.1.6"
+    "uglify-js": "^2.7.5"
+  },
+  "dependencies": {
+    "z-utils": "^1.2.0"
   }
 }

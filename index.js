@@ -1,137 +1,6 @@
-/*
- * @name: z-eventemitter
- * @version: 1.0.3
- * @description: javascript EventEmitter
- * @author: zbm2001@aliyun.com
- * @license: Apache 2.0
- */
 'use strict';
 
-const toString = Object.prototype.toString;
-
-/**
- * judge a object type name
- *
- * @param  {Object|Null|Undefined|String|Number|Function|Array|RegExp|HTMLDocument|HTMLHtmlElement|NodeList|XMLHttpRequest|...} object any
- * @return {String} string of type name, initials Capitalized
- */
-function typeOf(object) {
-  return toString.call(object).slice(8, -1)
-}
-
-const sNativeCode = (isNaN + '').slice((isNaN + '').indexOf('{'));
-/**
- * test function is a javascript native method
- *
- * @param {Function} func native function of javascript
- * @return {Boolean}
- */
-function isNativeFunction(func) {
-  return typeOf(func) === 'Function' && sNativeCode === (func += '').slice(func.indexOf('{'))
-}
-
-if (!isNativeFunction(Object.assign)) {
-  /**
-   * polyfill es2015 Object.assign
-   *
-   * @param {Object} target
-   * @returns {Object} target
-   */
-  Object.assign = function assign(target/*, ...args*/) {
-    if (target == null) {
-      throw new TypeError('Cannot convert undefined or null to object')
-    }
-
-    let output = Object(target),
-        i = -1,
-        args = Array.prototype.slice.call(arguments, 1),
-        l = args.length;
-
-    while (++i < l) {
-      let source = args[i];
-
-      if (source) {
-        for (let prop in source) {
-          if (source.hasOwnProperty(prop)) {
-            output[prop] = source[prop];
-          }
-        }
-      }
-    }
-    return output
-  };
-}
-
-var assign = Object.assign;
-
-if (!isNativeFunction(Object.create)) {
-
-  const hasOwnProperty = Object.prototype.hasOwnProperty;
-  const REFERENCE_TYPE = {
-    'object': !0,
-    'function': !0
-  };
-
-  /**
-   * polyfill es5 Object.create
-   *
-   * @param {Object} object
-   * @param {Object} props
-   * @returns {Object} like {__proto__: *}
-   */
-  Object.create = function create(object, props) {
-    if (object == null || !REFERENCE_TYPE[typeof object]) {
-      throw 'Object prototype may only be an Object or null'
-    }
-
-    let proto = {__proto__: object};
-
-    if (props) {
-      if (REFERENCE_TYPE[typeof props]) {
-        for (let propName in props) {
-          if (hasOwnProperty.call(props, propName)) {
-            let prop = props[propName];
-
-            if (prop && REFERENCE_TYPE[typeof prop]) {
-              object[propName] = prop.value;
-            } else {
-              throw 'Property description must be an object: value'
-            }
-          }
-        }
-      }
-    }
-    return proto
-  };
-}
-
-var create = Object.create;
-
-/**
- * 全局唯一标识符（GUID，Globally Unique Identifier）也称作 UUID(Universally Unique IDentifier) 。
- * GUID是一种由算法生成的二进制长度为128位的数字标识符。
- * GUID 的格式为“xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx”，其中的 x 是 0-9 或 a-f 范围内的一个32位十六进制数。
- * 在理想情况下，任何计算机和计算机集群都不会生成两个相同的GUID。
- * GUID 的总数达到了2^128（3.4×10^38）个，所以随机生成两个相同GUID的可能性非常小，但并不为0。
- * GUID一词有时也专指微软对UUID标准的实现。
- */
-
-/**
- * string of 4 chars
- *
- * return {String} length{4} 0-9 or a-f 范围内的一个32位十六进制数
- */
-function S4() {
-  return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1)
-}
-
-/**
- * 生成一个全局唯一标识符
- * @return {String} length{36} 返回格式为：“xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx” 的字符串
- */
-function uuid() {
-  return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4())
-}
+var zUtils = require('z-utils');
 
 /**
  * 事件对象构造器
@@ -140,10 +9,9 @@ function uuid() {
  * @return {Object} event object.
  * @api private
  */
-function Event () {
-}
+function Event () {}
 
-assign(Event.prototype, {
+zUtils.assign(Event.prototype, {
   // 事件类型
   type: '',
   // 捕获阶段
@@ -186,11 +54,11 @@ assign(Event.prototype, {
     this.cancelable = !!cancelable;
     if (!this.bubbles) {
       this.cancelBubble = true;
-      this.stopPropagation = returnFalse;
-      this.isPropagationStopped = returnTrue;
+      this.stopPropagation = zUtils.returnFalse;
+      this.isPropagationStopped = zUtils.returnTrue;
     }
     if (!this.cancelable) {
-      this.preventDefault = returnFalse;
+      this.preventDefault = zUtils.returnFalse;
     }
     return this
   },
@@ -201,12 +69,12 @@ assign(Event.prototype, {
    * @api public
    */
   preventDefault: function preventDefault () {
-    this.preventDefault = this.isDefaultPrevented = returnTrue;
+    this.preventDefault = this.isDefaultPrevented = zUtils.returnTrue;
     this.returnValue = false;
     return true
   },
 
-  isDefaultPrevented: returnFalse,
+  isDefaultPrevented: zUtils.returnFalse,
 
   /**
    * 阻止事件冒泡
@@ -214,12 +82,12 @@ assign(Event.prototype, {
    * @api public
    */
   stopPropagation: function stopPropagation () {
-    this.stopPropagation = this.isPropagationStopped = returnTrue;
+    this.stopPropagation = this.isPropagationStopped = zUtils.returnTrue;
     this.cancelBubble = true;
     return true
   },
 
-  isPropagationStopped: returnFalse,
+  isPropagationStopped: zUtils.returnFalse,
 
   /**
    * 阻止事件冒泡，并且终止当前所在事件队列的后续触发
@@ -228,35 +96,24 @@ assign(Event.prototype, {
    */
   stopImmediatePropagation: function stopImmediatePropagation () {
     this.stopPropagation();
-    this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue;
+    this.stopImmediatePropagation = this.isImmediatePropagationStopped = zUtils.returnTrue;
     return true
   },
 
-  isImmediatePropagationStopped: returnFalse
+  isImmediatePropagationStopped: zUtils.returnFalse
 
 });
 
-function returnTrue () {
-  return true
-}
-
-function returnFalse () {
-  return false
-}
-
-var Event$1 = assign(Event, {
-
+var Event$1 = zUtils.assign(Event, {
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上
   AT_TARGET: 2,
   // 冒泡阶段
-  BUBBLING_PHASE: 3,
-  returnTrue: returnTrue,
-  returnFalse: returnFalse
+  BUBBLING_PHASE: 3
 });
 
-var listenerWrapperSignKey = uuid();
+var listenerWrapperSignKey = zUtils.uuid();
 var listenerWrapperSignIndex = 0;
 var listenerWrapperSignRedundantIndex = [];
 
@@ -348,7 +205,7 @@ function alias (name) {
 
 function EventEmitter () {}
 
-assign(EventEmitter.prototype, {
+zUtils.assign(EventEmitter.prototype, {
 
   _events: null,
 
@@ -828,18 +685,18 @@ assign(EventEmitter.prototype, {
  */
 function inherito (constructor, protoProps, staticProps) {
   // 原型继承并扩展成员
-  assign(constructor.prototype = create(this.prototype), {
+  zUtils.assign(constructor.prototype = zUtils.create(this.prototype), {
     constructor: constructor
   }, protoProps);
 
   constructor.inherito = inherito;
 
   // 静态成员扩展
-  return assign(constructor, staticProps)
+  return zUtils.assign(constructor, staticProps)
 }
 
 // 静态成员扩展
-var core = assign(EventEmitter, {
+var core = zUtils.assign(EventEmitter, {
   inherito: inherito,
   Event: Event$1
 });

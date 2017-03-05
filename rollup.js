@@ -17,8 +17,9 @@ let targets = rollupConfig.targets ? rollupConfig.targets.map(target => ({
       dest: rollupConfig.dest
     }]
 
+const noBannerFormats = {'cjs': !0, 'es': !0}
 targets.forEach(function (target) {
-  target.banner = this.banner
+  target.banner = noBannerFormats[target.format] ? '' : this.banner
   target.moduleName = this.moduleName
   target.sourceMap = this.sourceMap
 }, rollupConfig)
@@ -48,7 +49,7 @@ rollup.rollup(rc).then(bundle => {
     if (target.minimize) {
       let minMain = target.dest.replace(/(?=\.js$)/, '.min')
       minMain === target.dest && (minMain += '.min')
-      fs.writeFileSync(minMain, target.banner + '\n' + minify(result.code))
+      fs.writeFileSync(minMain, target.banner + minify(result.code))
     }
 
   })
