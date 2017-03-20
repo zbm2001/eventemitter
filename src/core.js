@@ -1,4 +1,4 @@
-import {assign, create, uuid} from 'z-utils'
+import {arrayForEach, arraySlice, assign, create, uuid} from 'z-utils'
 import Event from './Event'
 
 const listenerWrapperSignKey = uuid()
@@ -117,7 +117,7 @@ assign(EventEmitter.prototype, {
         type,
         i,
         listenerWrappers,
-        listenerArgs = Array.prototype.slice.call(arguments, 1),
+        listenerArgs = arraySlice.call(arguments, 1),
         l = listenerArgs.length
 
     // 必须至少包含两个参数
@@ -205,7 +205,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addOnceListener(evt/*, ...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments, 1),
+    var listenerArgs = arraySlice.call(arguments, 1),
         listenerWrappers = wrapListenerArgs(listenerArgs, 1)
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -225,7 +225,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addLimitListener(evt, limit/*, ...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments, 2),
+    var listenerArgs = arraySlice.call(arguments, 2),
         listenerWrappers = wrapListenerArgs(listenerArgs, limit)
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -253,7 +253,7 @@ assign(EventEmitter.prototype, {
     if (!evt || !events) {
       return this
     }
-    var listenerArgs = Array.prototype.slice.call(arguments, 1)
+    var listenerArgs = arraySlice.call(arguments, 1)
 
     switch (typeof evt) {
         // 若为事件名
@@ -337,7 +337,7 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   addAllListeners(/*...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments)
+    var listenerArgs = arraySlice.call(arguments)
     return this.addListener.apply(this, ['*'].concat(listenerArgs))
     // return this.addListener('*', ...listenerArgs)
   },
@@ -356,7 +356,7 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   removeAllListeners(/*...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments)
+    var listenerArgs = arraySlice.call(arguments)
     return this.removeListener.apply(this, ['*'].concat(listenerArgs))
     // return this.removeListener('*', ...listenerArgs)
   },
@@ -532,7 +532,7 @@ assign(EventEmitter.prototype, {
    * @api private
    */
   emit (evt/*, ...args*/) {
-    var args = Array.prototype.slice.call(arguments, 1)
+    var args = arraySlice.call(arguments, 1)
     return this.emitEvent(evt, args, this, true, true, true)
   },
 
@@ -544,8 +544,8 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   bind (/*...methodNames*/) {
-    Array.prototype.forEach.call(arguments, function (methodName) {
-      typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this))
+    arrayForEach.call(arguments, function (methodName) {
+      typeof this[methodName] === 'function' && (this[methodName] = this[methodName].bind(this))
     }, this)
     return this
   },

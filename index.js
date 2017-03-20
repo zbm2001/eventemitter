@@ -229,7 +229,7 @@ zUtils.assign(EventEmitter.prototype, {
         type,
         i,
         listenerWrappers,
-        listenerArgs = Array.prototype.slice.call(arguments, 1),
+        listenerArgs = zUtils.arraySlice.call(arguments, 1),
         l = listenerArgs.length;
 
     // 必须至少包含两个参数
@@ -317,7 +317,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addOnceListener: function addOnceListener(evt/*, ...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments, 1),
+    var listenerArgs = zUtils.arraySlice.call(arguments, 1),
         listenerWrappers = wrapListenerArgs(listenerArgs, 1);
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -337,7 +337,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addLimitListener: function addLimitListener(evt, limit/*, ...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments, 2),
+    var listenerArgs = zUtils.arraySlice.call(arguments, 2),
         listenerWrappers = wrapListenerArgs(listenerArgs, limit);
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -367,7 +367,7 @@ zUtils.assign(EventEmitter.prototype, {
     if (!evt || !events) {
       return this
     }
-    var listenerArgs = Array.prototype.slice.call(arguments, 1);
+    var listenerArgs = zUtils.arraySlice.call(arguments, 1);
 
     switch (typeof evt) {
         // 若为事件名
@@ -451,7 +451,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   addAllListeners: function addAllListeners(/*...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments);
+    var listenerArgs = zUtils.arraySlice.call(arguments);
     return this.addListener.apply(this, ['*'].concat(listenerArgs))
     // return this.addListener('*', ...listenerArgs)
   },
@@ -470,7 +470,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   removeAllListeners: function removeAllListeners(/*...listenerArgs*/) {
-    var listenerArgs = Array.prototype.slice.call(arguments);
+    var listenerArgs = zUtils.arraySlice.call(arguments);
     return this.removeListener.apply(this, ['*'].concat(listenerArgs))
     // return this.removeListener('*', ...listenerArgs)
   },
@@ -650,7 +650,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api private
    */
   emit: function emit (evt/*, ...args*/) {
-    var args = Array.prototype.slice.call(arguments, 1);
+    var args = zUtils.arraySlice.call(arguments, 1);
     return this.emitEvent(evt, args, this, true, true, true)
   },
 
@@ -662,8 +662,8 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   bind: function bind (/*...methodNames*/) {
-    Array.prototype.forEach.call(arguments, function (methodName) {
-      typeof this[methodName] === 'function' && !this.hasOwnProperty(methodName) && (this[methodName] = this[methodName].bind(this));
+    zUtils.arrayForEach.call(arguments, function (methodName) {
+      typeof this[methodName] === 'function' && (this[methodName] = this[methodName].bind(this));
     }, this);
     return this
   },
