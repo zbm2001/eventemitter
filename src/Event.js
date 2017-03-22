@@ -47,7 +47,7 @@ assign(Event.prototype, {
     this.type = type
     this.currentTarget = currentTarget
     this.target = target || currentTarget
-    this.timeStamp = Date.now()
+    this.timeStamp = Date.now ? Date.now() : new Date.getTime()
     this.bubbles = !!bubbles
     this.cancelable = !!cancelable
     if (!this.bubbles) {

@@ -378,7 +378,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emitEvent(evt, args, target, bubbles, cancelable, returnValue) {
+  emitEvent(evt, target, emitArgs, bubbles, cancelable, returnValue) {
     var events = this._events,
         listenerWrappers,
         i,
@@ -392,7 +392,7 @@ assign(EventEmitter.prototype, {
     }
 
     target || (target = this)
-    args || (args = [])
+    emitArgs || (emitArgs = [])
 
     if (events) {
       switch (typeof evt) {
@@ -400,19 +400,21 @@ assign(EventEmitter.prototype, {
 
           if (evt === '*') {
             for (type in events) {
-              emits.call(this, type, events[type], args)
+              event = emits.call(this, type, events[type], emitArgs)
               this.emitEventPropagation(event)
             }
           } else {
             types = evt.split(this.eventTypeDelimiter)
             l = types.length
             if (l < 2) {
-              emits.call(this, evt, events[evt], args)
+              event = emits.call(this, evt, events[evt], emitArgs)
+              // 这里必须保让实例先执行相关程序，后触发冒泡
+              window.setTimeout(() => this.emitEventPropagation(event))
               return event
             }
             i = -1
             while (++i < l) {
-              emits.call(this, types[i], events[types[i]], args)
+              event = emits.call(this, types[i], events[types[i]], emitArgs)
               this.emitEventPropagation(event)
             }
           }
@@ -423,49 +425,49 @@ assign(EventEmitter.prototype, {
           if (typeof evt.test === 'function') {
             for (type in events) {
               if (evt.test(type)) {
-                emits.call(this, type, events[type], args)
+                event = emits.call(this, type, events[type], emitArgs)
                 this.emitEventPropagation(event)
               }
             }
           }
       }
     } else if (this.parent && this.parent.emitEvent) {
-      this.parent.emitEvent(evt, args, target, bubbles, cancelable, returnValue)
+      this.parent.emitEvent(evt, target, emitArgs, bubbles, cancelable, returnValue)
     }
 
     return event
 
-    function emits (type, listenerWrappers, args) {
+    function emits (type, listenerWrappers, emitArgs) {
       var listenerWrapper,
           handleEvent,
           context,
-          response
+          response,
+          event = this.createEvent(type, target, emitArgs, bubbles, cancelable, returnValue)
 
       listenerWrappers.emittingIndex = -1
-      event = this.createEvent(type, args, target, bubbles, cancelable, returnValue)
 
       outer: while (listenerWrapper = listenerWrappers[++listenerWrappers.emittingIndex]) {
         // 确定作用域和事件函数
         context = listenerWrapper.listener || this
         handleEvent = listenerWrapper.handleEvent || context.handleEvent
 
-        switch (args.length) {
+        switch (emitArgs.length) {
             // fast cases
           case 0:
             response = handleEvent.call(context, event)
             break
           case 1:
-            response = handleEvent.call(context, event, args[0])
+            response = handleEvent.call(context, event, emitArgs[0])
             break
           case 2:
-            response = handleEvent.call(context, event, args[0], args[1])
+            response = handleEvent.call(context, event, emitArgs[0], emitArgs[1])
             break
           case 3:
-            response = handleEvent.call(context, event, args[0], args[1], args[2])
+            response = handleEvent.call(context, event, emitArgs[0], emitArgs[1], emitArgs[2])
             break
             // slower
           default:
-            response = handleEvent.apply(context, [event].concat(args))
+            response = handleEvent.apply(context, [event].concat(emitArgs))
         }
 
         switch (response) {
@@ -489,6 +491,7 @@ assign(EventEmitter.prototype, {
 
       // 重置emitting索引
       listenerWrappers.emittingIndex = -1
+      return event
     }
   },
 
@@ -501,7 +504,7 @@ assign(EventEmitter.prototype, {
    */
   emitEventPropagation(event) {
     if (this.parent && this.parent.emitEvent && !event.isPropagationStopped()) {
-      this.parent.emitEvent(event.type, event.emitArgs, event.target, event.bubbles, event.cancelable, event.returnValue)
+      this.parent.emitEvent(event.type, event.target, event.emitArgs, event.bubbles, event.cancelable, event.returnValue)
     }
   },
 
@@ -512,11 +515,12 @@ assign(EventEmitter.prototype, {
    * @param {Object} target 传入的事件触发对象
    * @param {Boolean} bubbles 设置事件是否为冒泡模型
    * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
-   * @return {Object} this
+   * @return {Boolean} returnValue 设置事件是否未阻止事件默认行为
+   * @return {Object} 事件对象
    * @api private
    */
-  createEvent(type, target, bubbles, cancelable, emitArgs, returnValue) {
-    var event = new Event()
+  createEvent(type, target, emitArgs, bubbles, cancelable, returnValue) {
+    var event = create(Event.prototype)
     event.initEvent(type, this, target, bubbles, cancelable)
     event.emitArgs = emitArgs
     returnValue || event.preventDefault()
@@ -527,13 +531,13 @@ assign(EventEmitter.prototype, {
    * 触发事件
    *
    * @param {String|RegExp} evt 事件名称或类正则对象（匹配事件名）
-   * @param {Array} args 传递给事件处理的后续可选参数集
+   * @param {Array} emitArgs 传递给事件处理的后续可选参数集
    * @return {Object} this
    * @api private
    */
-  emit (evt/*, ...args*/) {
-    var args = arraySlice.call(arguments, 1)
-    return this.emitEvent(evt, args, this, true, true, true)
+  emit (evt/*, ...emitArgs*/) {
+    var emitArgs = arraySlice.call(arguments, 1)
+    return this.emitEvent(evt, this, emitArgs, true, true, true)
   },
 
   /**
