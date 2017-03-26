@@ -91,7 +91,7 @@ function alias (name) {
   }
 }
 
-function EventEmitter () {}
+export default function EventEmitter () {}
 
 assign(EventEmitter.prototype, {
 
@@ -570,21 +570,22 @@ assign(EventEmitter.prototype, {
  * @return {Function} constructor 参数
  */
 function inherito (constructor, protoProps, staticProps) {
-  // 原型继承并扩展成员
-  assign(constructor.prototype = create(this.prototype), {
-    constructor: constructor
-  }, protoProps)
-
+  // 原型继承
+  constructor.prototype = create(this.prototype)
+  // 修复原型构造函数的引用
+  constructor.prototype.constructor = constructor
+  // 扩展原型成员
+  assign(constructor.prototype, protoProps)
+  // 静态扩展继承方法
   constructor.inherito = inherito
-
-  // 静态成员扩展
+  // 扩展静态成员
   return assign(constructor, staticProps)
 }
 
 export {Event, inherito}
 
 // 静态成员扩展
-export default assign(EventEmitter, {
+assign(EventEmitter, {
   inherito,
   Event
 })
