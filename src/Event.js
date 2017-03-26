@@ -7,7 +7,7 @@ import {assign, returnFalse, returnTrue} from 'z-utils'
  * @return {Object} event object.
  * @api private
  */
-function Event () {}
+export default function Event () {}
 
 assign(Event.prototype, {
   // 事件类型
@@ -102,7 +102,7 @@ assign(Event.prototype, {
 
 })
 
-export default assign(Event, {
+assign(Event, {
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上

@@ -104,7 +104,7 @@ zUtils.assign(Event.prototype, {
 
 });
 
-var Event$1 = zUtils.assign(Event, {
+zUtils.assign(Event, {
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上
@@ -638,7 +638,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api private
    */
   createEvent: function createEvent(type, target, emitArgs, bubbles, cancelable, returnValue) {
-    var event = zUtils.create(Event$1.prototype);
+    var event = zUtils.create(Event.prototype);
     event.initEvent(type, this, target, bubbles, cancelable);
     event.emitArgs = emitArgs;
     returnValue || event.preventDefault();
@@ -703,7 +703,7 @@ function inherito (constructor, protoProps, staticProps) {
 // 静态成员扩展
 zUtils.assign(EventEmitter, {
   inherito: inherito,
-  Event: Event$1
+  Event: Event
 });
 
 module.exports = EventEmitter;
