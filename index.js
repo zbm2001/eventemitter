@@ -157,7 +157,7 @@ function indexOfListener (listeners, listener) {
  * @api private
  */
 function wrapListenerArgs (listenerArgs, limit) {
-  var i = 0,
+  var i = -1,
       l = listenerArgs.length,
       listenerWrappers = [],
       listener;
@@ -567,43 +567,44 @@ zUtils.assign(EventEmitter.prototype, {
       outer: while (listenerWrapper = listenerWrappers[++listenerWrappers.emittingIndex]) {
         // 确定作用域和事件函数
         context = listenerWrapper.listener || this$1;
-        handleEvent = listenerWrapper.handleEvent || context.handleEvent;
 
-        switch (emitArgs.length) {
+        if ((handleEvent = listenerWrapper.handleEvent || context.handleEvent)) {
+          switch (emitArgs.length) {
             // fast cases
-          case 0:
-            response = handleEvent.call(context, event);
-            break
-          case 1:
-            response = handleEvent.call(context, event, emitArgs[0]);
-            break
-          case 2:
-            response = handleEvent.call(context, event, emitArgs[0], emitArgs[1]);
-            break
-          case 3:
-            response = handleEvent.call(context, event, emitArgs[0], emitArgs[1], emitArgs[2]);
-            break
+            case 0:
+              response = handleEvent.call(context, event);
+              break
+            case 1:
+              response = handleEvent.call(context, event, emitArgs[0]);
+              break
+            case 2:
+              response = handleEvent.call(context, event, emitArgs[0], emitArgs[1]);
+              break
+            case 3:
+              response = handleEvent.call(context, event, emitArgs[0], emitArgs[1], emitArgs[2]);
+              break
             // slower
-          default:
-            response = handleEvent.apply(context, [event].concat(emitArgs));
-        }
+            default:
+              response = handleEvent.apply(context, [event].concat(emitArgs));
+          }
 
-        switch (response) {
+          switch (response) {
             // 返回值为假，就跳出循环，中断后续事件队列的执行
-          case false:
-            break outer
+            case false:
+              break outer
             // 返回值为真，则删除当前侦听器，及只执行一次当前事件
-          case true:
-            this$1.removeListener(type, listenerWrapper);
-            break
-          default:
-            // 若执行次数限制为零，则删除当前侦听器
-            --listenerWrapper.limit || this$1.removeListener(type, listenerWrapper);
-        }
+            case true:
+              this$1.removeListener(type, listenerWrapper);
+              break
+            default:
+              // 若执行次数限制为零，则删除当前侦听器
+              --listenerWrapper.limit || this$1.removeListener(type, listenerWrapper);
+          }
 
-        // 若已终止事件队列后续执行及事件冒泡
-        if (event.isImmediatePropagationStopped()) {
-          break
+          // 若已终止事件队列后续执行及事件冒泡
+          if (event.isImmediatePropagationStopped()) {
+            break
+          }
         }
       }
 
