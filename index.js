@@ -412,7 +412,8 @@ zUtils.assign(EventEmitter.prototype, {
     function filter (events, type, listenerArgs) {
       var l = listenerArgs.length,
           i = 0,
-          listenerWrappers = events[type];
+          listenerWrappers = events[type],
+          index = -1;
       if (l) {
         do {
           if ((index = indexOfListener(listenerWrappers, listenerArgs[i])) > -1) {
