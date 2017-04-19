@@ -270,7 +270,7 @@ assign(EventEmitter.prototype, {
 
           while (--l > -1) {
             type = types[l]
-            if (events[type]) {
+            if (events.hasOwnProperty(type)) {
               filter(events, type, listenerArgs)
             }
           }
@@ -308,6 +308,7 @@ assign(EventEmitter.prototype, {
             listenerWrappers.splice(index, 1)
             // 若数组长度为0，清除队列并返回
             if (!listenerWrappers.length) {
+              listenerWrappers.emittingIndex = -1
               delete events[type]
               return
             }
@@ -317,6 +318,7 @@ assign(EventEmitter.prototype, {
         } while (++i < l)
       } else {
         listenerWrappers.length = 0
+        listenerWrappers.emittingIndex = -1
         delete events[type]
       }
     }
@@ -408,7 +410,7 @@ assign(EventEmitter.prototype, {
           } else {
             types = evt.split(this.eventTypeDelimiter)
             l = types.length
-            if (l < 2 && events[evt] && events.hasOwnProperty(evt)) {
+            if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs)
               // 这里必须确保让实例先执行相关程序，后触发冒泡
               window.setTimeout(() => this.emitEventPropagation(event))
@@ -416,7 +418,7 @@ assign(EventEmitter.prototype, {
             }
             i = -1
             while (++i < l) {
-              if (events[types[i]] && events.hasOwnProperty(types[i])) {
+              if (events.hasOwnProperty(types[i])) {
                 event = emits.call(this, types[i], events[types[i]], emitArgs)
                 this.emitEventPropagation(event)
               }
