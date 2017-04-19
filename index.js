@@ -203,7 +203,8 @@ function alias (name) {
   }
 }
 
-function EventEmitter () {}
+function EventEmitter () {
+}
 
 zUtils.assign(EventEmitter.prototype, {
 
@@ -523,16 +524,18 @@ zUtils.assign(EventEmitter.prototype, {
           } else {
             types = evt.split(this.eventTypeDelimiter);
             l = types.length;
-            if (l < 2) {
+            if (l < 2 && events[evt] && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs);
-              // 这里必须保让实例先执行相关程序，后触发冒泡
+              // 这里必须确保让实例先执行相关程序，后触发冒泡
               window.setTimeout(function () { return this$1.emitEventPropagation(event); });
               return event
             }
             i = -1;
             while (++i < l) {
-              event = emits.call(this$1, types[i], events[types[i]], emitArgs);
-              this$1.emitEventPropagation(event);
+              if (events[types[i]] && events.hasOwnProperty(types[i])) {
+                event = emits.call(this$1, types[i], events[types[i]], emitArgs);
+                this$1.emitEventPropagation(event);
+              }
             }
           }
           return event
@@ -571,7 +574,7 @@ zUtils.assign(EventEmitter.prototype, {
 
         if ((handleEvent = listenerWrapper.handleEvent || context.handleEvent)) {
           switch (emitArgs.length) {
-            // fast cases
+              // fast cases
             case 0:
               response = handleEvent.call(context, event);
               break
@@ -584,16 +587,16 @@ zUtils.assign(EventEmitter.prototype, {
             case 3:
               response = handleEvent.call(context, event, emitArgs[0], emitArgs[1], emitArgs[2]);
               break
-            // slower
+              // slower
             default:
               response = handleEvent.apply(context, [event].concat(emitArgs));
           }
 
           switch (response) {
-            // 返回值为假，就跳出循环，中断后续事件队列的执行
+              // 返回值为假，就跳出循环，中断后续事件队列的执行
             case false:
               break outer
-            // 返回值为真，则删除当前侦听器，及只执行一次当前事件
+              // 返回值为真，则删除当前侦听器，及只执行一次当前事件
             case true:
               this$1.removeListener(type, listenerWrapper);
               break
