@@ -65,11 +65,11 @@ function wrapListenerArgs (listenerArgs, limit) {
 
         case 'object':
           listenerWrappers.push(listener[listenerWrapperSignKey] ? listener : {
-                listener: listener,
-                handleEvent: null,
-                limit: limit,
-                [listenerWrapperSignKey]: listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex
-              })
+            listener: listener,
+            handleEvent: null,
+            limit: limit,
+            [listenerWrapperSignKey]: listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex
+          })
           continue outer
       }
     }
@@ -111,7 +111,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this 返回当前对象
    * @api public
    */
-  addListener(evt /*, ...listenerArgs*/) {
+  addListener (evt /*, ...listenerArgs*/) {
     var events,
         listeners,
         types,
@@ -205,7 +205,7 @@ assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addOnceListener(evt/*, ...listenerArgs*/) {
+  addOnceListener (evt/*, ...listenerArgs*/) {
     var listenerArgs = arraySlice.call(arguments, 1),
         listenerWrappers = wrapListenerArgs(listenerArgs, 1)
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
@@ -225,7 +225,7 @@ assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addLimitListener(evt, limit/*, ...listenerArgs*/) {
+  addLimitListener (evt, limit/*, ...listenerArgs*/) {
     var listenerArgs = arraySlice.call(arguments, 2),
         listenerWrappers = wrapListenerArgs(listenerArgs, limit)
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
@@ -245,7 +245,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  removeListener(evt/*, ...listenerArgs*/) {
+  removeListener (evt/*, ...listenerArgs*/) {
     var events = this._events,
         types,
         l,
@@ -340,7 +340,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  addAllListeners(/*...listenerArgs*/) {
+  addAllListeners (/*...listenerArgs*/) {
     var listenerArgs = arraySlice.call(arguments)
     return this.addListener.apply(this, ['*'].concat(listenerArgs))
     // return this.addListener('*', ...listenerArgs)
@@ -359,7 +359,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  removeAllListeners(/*...listenerArgs*/) {
+  removeAllListeners (/*...listenerArgs*/) {
     var listenerArgs = arraySlice.call(arguments)
     return this.removeListener.apply(this, ['*'].concat(listenerArgs))
     // return this.removeListener('*', ...listenerArgs)
@@ -382,7 +382,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emitEvent(evt, target, emitArgs, bubbles, cancelable, returnValue) {
+  emitEvent (evt, target, emitArgs, bubbles, cancelable, returnValue) {
     var events = this._events,
         listenerWrappers,
         i,
@@ -509,30 +509,13 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emitEventPropagation(event) {
+  emitEventPropagation (event) {
     if (this.parent && this.parent.emitEvent && !event.isPropagationStopped()) {
       this.parent.emitEvent(event.type, event.target, event.emitArgs, event.bubbles, event.cancelable, event.returnValue)
     }
   },
 
-  /**
-   * 创建事件对象
-   *
-   * @param {String} type 事件名称
-   * @param {Object} target 传入的事件触发对象
-   * @param {Boolean} bubbles 设置事件是否为冒泡模型
-   * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
-   * @return {Boolean} returnValue 设置事件是否未阻止事件默认行为
-   * @return {Object} 事件对象
-   * @api private
-   */
-  createEvent(type, target, emitArgs, bubbles, cancelable, returnValue) {
-    var event = create(Event.prototype)
-    event.initEvent(type, this, target, bubbles, cancelable)
-    event.emitArgs = emitArgs
-    returnValue || event.preventDefault()
-    return event
-  },
+  createEvent,
 
   /**
    * 触发事件
@@ -570,6 +553,26 @@ assign(EventEmitter.prototype, {
 })
 
 /**
+ * 创建事件对象
+ *
+ * @param {String} type 事件名称
+ * @param {Object} target 传入的事件触发对象
+ * @param {Object} emitArgs 触发事件的参数集数组
+ * @param {Boolean} bubbles 设置事件是否为冒泡模型
+ * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
+ * @return {Boolean} returnValue 设置事件是否未阻止事件默认行为
+ * @return {Object} 事件对象
+ * @api private
+ */
+function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
+  var event = create(Event.prototype)
+  event.initEvent(type, this, target, bubbles, cancelable)
+  event.emitArgs = emitArgs
+  returnValue || event.preventDefault()
+  return event
+}
+
+/**
  * 继承给指定的类
  * @param  {Function} constructor 构造函数
  * @param  {Object} protoProps 原型方法集
@@ -589,7 +592,7 @@ function inherito (constructor, protoProps, staticProps) {
   return assign(constructor, staticProps)
 }
 
-export {Event, inherito}
+export {Event, inherito, createEvent}
 
 // 静态成员扩展
 assign(EventEmitter, {
