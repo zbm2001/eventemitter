@@ -13,7 +13,7 @@ const banner = '/*\n' +
 const external = Object.keys(pkg.devDependencies)
 
 module.exports = {
-  entry: 'src/index.js',
+  input: 'src/index.js', // entry -> input
   plugins: [
     // resolve({
     //   jsnext: true,
@@ -31,34 +31,34 @@ module.exports = {
     }),
     replace({
       exclude: 'node_modules/**',
-      ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+      ENV: JSON.stringify(process.env.NODE_ENV || 'development')
     })
   ],
   external: external,
   targets: [
     {
-      dest: 'index.js',
+      file: 'index.js', // dest -> file
       format: 'cjs'
     }/*, {
-     dest: 'EventEmitter.amd.js',
-     format: 'amd'
-     }, {
-     dest: 'EventEmitter.cjs.js',
-     format: 'cjs'
-     }, {
-     dest: 'EventEmitter.es.js',
-     format: 'es'
-     }, {
-     dest: 'EventEmitter.iife.js',
-     format: 'iife'
-     }, {
-     dest: 'EventEmitter.umd.js',
-     format: 'umd'
-     }*/
+      file: 'EventEmitter.amd.js',
+      format: 'amd'
+    }, {
+      file: 'EventEmitter.cjs.js',
+      format: 'cjs'
+    }, {
+      file: 'EventEmitter.es.js',
+      format: 'es'
+    }, {
+      file: 'EventEmitter.iife.js',
+      format: 'iife'
+    }, {
+      file: 'EventEmitter.umd.js',
+      format: 'umd'
+    }*/
   ],
   banner: banner,
   // format: 'iife', // cjs amd es6 umd iife
-  moduleName: 'EventEmitter', // umd 或 iife 模式下，若入口文件含 export，必须加上该属性
-  // dest: 'EventEmitter.js', // 输出文件
-  // sourceMap: false   // 调试编译
+  name: 'EventEmitter' // umd 或 iife 模式下，若入口文件含 export，必须加上该属性 moduleName -> name
+  // file: 'EventEmitter.js', // 输出文件 dest -> file
+  // sourcemap: false   // 调试编译 sourceMap -> sourcemap
 }

@@ -2,8 +2,8 @@ import {arrayForEach, arraySlice, assign, create, uuid} from 'z-utils'
 import Event from './Event'
 
 const listenerWrapperSignKey = uuid()
-var listenerWrapperSignIndex = 0
-var listenerWrapperSignRedundantIndex = []
+const listenerWrapperSignRedundantIndex = []
+let listenerWrapperSignIndex = 0
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -14,7 +14,7 @@ var listenerWrapperSignRedundantIndex = []
  * @api private
  */
 function indexOfListener (listeners, listener) {
-  var i = listeners.length;
+  let i = listeners.length;
   if (listener) {
     switch (typeof listener) {
       case 'function':
@@ -45,7 +45,7 @@ function indexOfListener (listeners, listener) {
  * @api private
  */
 function wrapListenerArgs (listenerArgs, limit) {
-  var i = -1,
+  let i = -1,
       l = listenerArgs.length,
       listenerWrappers = [],
       listener
@@ -112,7 +112,7 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   addListener (evt /*, ...listenerArgs*/) {
-    var events,
+    let events,
         listeners,
         types,
         type,
@@ -184,7 +184,7 @@ assign(EventEmitter.prototype, {
     return this
 
     function adds () {
-      var i = -1
+      let i = -1
       while (++i < l) {
         if (indexOfListener(listeners, listenerWrappers[i].listener || listenerWrappers[i].handleEvent) < 0) {
           listeners.push(listenerWrappers[i])
@@ -206,7 +206,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addOnceListener (evt/*, ...listenerArgs*/) {
-    var listenerArgs = arraySlice.call(arguments, 1),
+    let listenerArgs = arraySlice.call(arguments, 1),
         listenerWrappers = wrapListenerArgs(listenerArgs, 1)
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -226,7 +226,7 @@ assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addLimitListener (evt, limit/*, ...listenerArgs*/) {
-    var listenerArgs = arraySlice.call(arguments, 2),
+    let listenerArgs = arraySlice.call(arguments, 2),
         listenerWrappers = wrapListenerArgs(listenerArgs, limit)
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -246,7 +246,7 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   removeListener (evt/*, ...listenerArgs*/) {
-    var events = this._events,
+    let events = this._events,
         types,
         l,
         type
@@ -254,7 +254,7 @@ assign(EventEmitter.prototype, {
     if (!evt || !events) {
       return this
     }
-    var listenerArgs = arraySlice.call(arguments, 1)
+    let listenerArgs = arraySlice.call(arguments, 1)
 
     switch (typeof evt) {
         // 若为事件名
@@ -297,7 +297,7 @@ assign(EventEmitter.prototype, {
     return this
 
     function filter (events, type, listenerArgs) {
-      var l = listenerArgs.length,
+      let l = listenerArgs.length,
           i = 0,
           listenerWrappers = events[type],
           index = -1
@@ -341,7 +341,7 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   addAllListeners (/*...listenerArgs*/) {
-    var listenerArgs = arraySlice.call(arguments)
+    let listenerArgs = arraySlice.call(arguments)
     return this.addListener.apply(this, ['*'].concat(listenerArgs))
     // return this.addListener('*', ...listenerArgs)
   },
@@ -360,7 +360,7 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   removeAllListeners (/*...listenerArgs*/) {
-    var listenerArgs = arraySlice.call(arguments)
+    let listenerArgs = arraySlice.call(arguments)
     return this.removeListener.apply(this, ['*'].concat(listenerArgs))
     // return this.removeListener('*', ...listenerArgs)
   },
@@ -383,7 +383,7 @@ assign(EventEmitter.prototype, {
    * @api private
    */
   emitEvent (evt, target, emitArgs, bubbles, cancelable, returnValue) {
-    var events = this._events,
+    let events = this._events,
         listenerWrappers,
         i,
         l,
@@ -444,7 +444,7 @@ assign(EventEmitter.prototype, {
     return event
 
     function emits (type, listenerWrappers, emitArgs) {
-      var listenerWrapper,
+      let listenerWrapper,
           handleEvent,
           context,
           response,
@@ -526,7 +526,7 @@ assign(EventEmitter.prototype, {
    * @api private
    */
   emit (evt/*, ...emitArgs*/) {
-    var emitArgs = arraySlice.call(arguments, 1)
+    let emitArgs = arraySlice.call(arguments, 1)
     return this.emitEvent(evt, this, emitArgs, true, true, true)
   },
 
@@ -557,15 +557,15 @@ assign(EventEmitter.prototype, {
  *
  * @param {String} type 事件名称
  * @param {Object} target 传入的事件触发对象
- * @param {Object} emitArgs 触发事件的参数集数组
+ * @param {Array} emitArgs 触发事件的参数集数组
  * @param {Boolean} bubbles 设置事件是否为冒泡模型
  * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
  * @return {Boolean} returnValue 设置事件是否未阻止事件默认行为
  * @return {Object} 事件对象
  * @api private
  */
-function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
-  var event = create(Event.prototype)
+export function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
+  let event = create(Event.prototype)
   event.initEvent(type, this, target, bubbles, cancelable)
   event.emitArgs = emitArgs
   returnValue || event.preventDefault()
@@ -579,7 +579,7 @@ function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) 
  * @param  {Object} staticProps 静态方法集
  * @return {Function} constructor 参数
  */
-function inherito (constructor, protoProps, staticProps) {
+export function inherito (constructor, protoProps, staticProps) {
   // 原型继承
   constructor.prototype = create(this.prototype)
   // 修复原型构造函数的引用
@@ -592,7 +592,7 @@ function inherito (constructor, protoProps, staticProps) {
   return assign(constructor, staticProps)
 }
 
-export {Event, inherito, createEvent}
+export {Event}
 
 // 静态成员扩展
 assign(EventEmitter, {

@@ -1,5 +1,7 @@
 'use strict';
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
 var zUtils = require('z-utils');
 
 /**
@@ -114,8 +116,8 @@ zUtils.assign(Event, {
 });
 
 var listenerWrapperSignKey = zUtils.uuid();
-var listenerWrapperSignIndex = 0;
 var listenerWrapperSignRedundantIndex = [];
+var listenerWrapperSignIndex = 0;
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -177,10 +179,10 @@ function wrapListenerArgs (listenerArgs, limit) {
 
         case 'object':
           listenerWrappers.push(listener[listenerWrapperSignKey] ? listener : ( obj$1 = {
-                listener: listener,
-                handleEvent: null,
-                limit: limit
-              }, obj$1[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj$1 ));
+            listener: listener,
+            handleEvent: null,
+            limit: limit
+          }, obj$1[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj$1 ));
       var obj$1;
           continue outer
       }
@@ -223,7 +225,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this 返回当前对象
    * @api public
    */
-  addListener: function addListener(evt /*, ...listenerArgs*/) {
+  addListener: function addListener (evt /*, ...listenerArgs*/) {
     var events,
         listeners,
         types,
@@ -317,7 +319,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addOnceListener: function addOnceListener(evt/*, ...listenerArgs*/) {
+  addOnceListener: function addOnceListener (evt/*, ...listenerArgs*/) {
     var listenerArgs = zUtils.arraySlice.call(arguments, 1),
         listenerWrappers = wrapListenerArgs(listenerArgs, 1);
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
@@ -337,7 +339,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @param {Array[Function|Object]} listenerArgs 事件侦听器对象（包含一个标准名为handleEvent的方法）或事件处理函数
    * @return {Object} this
    */
-  addLimitListener: function addLimitListener(evt, limit/*, ...listenerArgs*/) {
+  addLimitListener: function addLimitListener (evt, limit/*, ...listenerArgs*/) {
     var listenerArgs = zUtils.arraySlice.call(arguments, 2),
         listenerWrappers = wrapListenerArgs(listenerArgs, limit);
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
@@ -357,7 +359,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  removeListener: function removeListener(evt/*, ...listenerArgs*/) {
+  removeListener: function removeListener (evt/*, ...listenerArgs*/) {
     var this$1 = this;
 
     var events = this._events,
@@ -454,7 +456,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  addAllListeners: function addAllListeners(/*...listenerArgs*/) {
+  addAllListeners: function addAllListeners (/*...listenerArgs*/) {
     var listenerArgs = zUtils.arraySlice.call(arguments);
     return this.addListener.apply(this, ['*'].concat(listenerArgs))
     // return this.addListener('*', ...listenerArgs)
@@ -473,7 +475,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api public
    */
-  removeAllListeners: function removeAllListeners(/*...listenerArgs*/) {
+  removeAllListeners: function removeAllListeners (/*...listenerArgs*/) {
     var listenerArgs = zUtils.arraySlice.call(arguments);
     return this.removeListener.apply(this, ['*'].concat(listenerArgs))
     // return this.removeListener('*', ...listenerArgs)
@@ -496,7 +498,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emitEvent: function emitEvent(evt, target, emitArgs, bubbles, cancelable, returnValue) {
+  emitEvent: function emitEvent (evt, target, emitArgs, bubbles, cancelable, returnValue) {
     var this$1 = this;
 
     var events = this._events,
@@ -627,30 +629,13 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    * @api private
    */
-  emitEventPropagation: function emitEventPropagation(event) {
+  emitEventPropagation: function emitEventPropagation (event) {
     if (this.parent && this.parent.emitEvent && !event.isPropagationStopped()) {
       this.parent.emitEvent(event.type, event.target, event.emitArgs, event.bubbles, event.cancelable, event.returnValue);
     }
   },
 
-  /**
-   * 创建事件对象
-   *
-   * @param {String} type 事件名称
-   * @param {Object} target 传入的事件触发对象
-   * @param {Boolean} bubbles 设置事件是否为冒泡模型
-   * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
-   * @return {Boolean} returnValue 设置事件是否未阻止事件默认行为
-   * @return {Object} 事件对象
-   * @api private
-   */
-  createEvent: function createEvent(type, target, emitArgs, bubbles, cancelable, returnValue) {
-    var event = zUtils.create(Event.prototype);
-    event.initEvent(type, this, target, bubbles, cancelable);
-    event.emitArgs = emitArgs;
-    returnValue || event.preventDefault();
-    return event
-  },
+  createEvent: createEvent,
 
   /**
    * 触发事件
@@ -688,6 +673,26 @@ zUtils.assign(EventEmitter.prototype, {
 });
 
 /**
+ * 创建事件对象
+ *
+ * @param {String} type 事件名称
+ * @param {Object} target 传入的事件触发对象
+ * @param {Array} emitArgs 触发事件的参数集数组
+ * @param {Boolean} bubbles 设置事件是否为冒泡模型
+ * @return {Boolean} cancelable 设置事件是否可以取消冒泡事件
+ * @return {Boolean} returnValue 设置事件是否未阻止事件默认行为
+ * @return {Object} 事件对象
+ * @api private
+ */
+function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
+  var event = zUtils.create(Event.prototype);
+  event.initEvent(type, this, target, bubbles, cancelable);
+  event.emitArgs = emitArgs;
+  returnValue || event.preventDefault();
+  return event
+}
+
+/**
  * 继承给指定的类
  * @param  {Function} constructor 构造函数
  * @param  {Object} protoProps 原型方法集
@@ -713,4 +718,7 @@ zUtils.assign(EventEmitter, {
   Event: Event
 });
 
-module.exports = EventEmitter;
+exports['default'] = EventEmitter;
+exports.createEvent = createEvent;
+exports.inherito = inherito;
+exports.Event = Event;

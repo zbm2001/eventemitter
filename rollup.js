@@ -5,23 +5,23 @@ const rollup = require('rollup')
 const uglifyjs = require('uglify-js')
 const rollupConfig = require('./rollup.config.js')
 const rc = {
-  entry: rollupConfig.entry,
+  input: rollupConfig.input, // entry -> input
   plugins: rollupConfig.plugins
 }
 
 let targets = rollupConfig.targets ? rollupConfig.targets.map(target => ({
-      format: target.format,
-      dest: target.dest
-    })) : [{
-      format: rollupConfig.format,
-      dest: rollupConfig.dest
-    }]
+  format: target.format,
+  file: target.file // dest -> file
+})) : [{
+  format: rollupConfig.format,
+  file: rollupConfig.file // dest -> file
+}]
 
 const noBannerFormats = {'cjs': !0, 'es': !0}
 targets.forEach(function (target) {
   target.banner = noBannerFormats[target.format] ? '' : this.banner
-  target.moduleName = this.moduleName
-  target.sourceMap = this.sourceMap
+  target.name = this.name // moduleName -> name
+  target.sourcemap = this.sourcemap // sourceMap -> sourcemap
 }, rollupConfig)
 
 /**
@@ -29,7 +29,7 @@ targets.forEach(function (target) {
  * @param  {String} code JS代码源文本
  * @return {String} 返回压缩后的代码文本
  */
-function minify(code) {
+function minify (code) {
   let minifyOptions = {
     fromString: true
   }
@@ -40,18 +40,17 @@ function minify(code) {
 rollup.rollup(rc).then(bundle => {
 
   targets.forEach(target => {
-    let result = bundle.generate(target)
+    bundle.generate(target).then(({code, map}) => {
+      // file 生成的目标文件 dest -> file
+      fs.writeFileSync(target.file, code)
 
-    // dest 生成的目标文件
-    fs.writeFileSync(target.dest, result.code)
-
-    // 若指定压缩最小化文件
-    if (target.minimize) {
-      let minMain = target.dest.replace(/(?=\.js$)/, '.min')
-      minMain === target.dest && (minMain += '.min')
-      fs.writeFileSync(minMain, target.banner + minify(result.code))
-    }
-
+      // 若指定压缩最小化文件
+      if (target.minimize) {
+        let minMain = target.file.replace(/(?=\.js$)/, '.min')
+        minMain === target.file && (minMain += '.min')
+        fs.writeFileSync(minMain, target.banner + minify(code))
+      }
+    })
   })
 
   // bundle写入方式
