@@ -1,7 +1,20 @@
 import {arrayForEach, arraySlice, assign, create, uuid} from 'z-utils'
 import Event from './Event'
 
-const numberFunctionTypeHash = {number:!0, function:!0}
+// https://segmentfault.com/a/1190000008595101
+// https://www.zhihu.com/question/36972010
+// http://www.jianshu.com/p/837b584e1bdd
+// https://segmentfault.com/a/1190000007936922
+// macro-task: script (整体代码)，setTimeout, setInterval, setImmediate, I/O, UI rendering.
+// micro-task: process.nextTick, Promise(原生)，Object.observe，MutationObserver
+// idle观察者 > I/O观察者 > check观察者。
+// idle观察者：process.nextTick
+// I/O观察者：一般性的I/O回调，如网络，文件，数据库I/O等
+// check观察者：setTimeout，setImmediate
+const nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? (callback) => new Promise(() => {
+}).then(callback) : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : () => {
+}
+const numberFunctionTypeHash = {number: !0, function: !0}
 const listenerWrapperSignKey = uuid()
 const listenerWrapperSignRedundantIndex = []
 let listenerWrapperSignIndex = 0
@@ -414,7 +427,7 @@ assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs)
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              window.setTimeout(() => this.emitEventPropagation(event))
+              nextTick(() => this.emitEventPropagation(event))
               return event
             }
             i = -1
@@ -493,7 +506,7 @@ assign(EventEmitter.prototype, {
                   break
                 case 'function':
                   // 若执行限制函数为 true
-                  listenerWrapper.limit.call(context, event) && this.removeListener(type, listenerWrapper)
+                  listenerWrapper.limit.call(context, event, response) && this.removeListener(type, listenerWrapper)
                   break
               }
           }

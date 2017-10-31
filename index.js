@@ -115,9 +115,20 @@ zUtils.assign(Event, {
   BUBBLING_PHASE: 3
 });
 
+var numberFunctionTypeHash = {number: !0, function: !0};
 var listenerWrapperSignKey = zUtils.uuid();
 var listenerWrapperSignRedundantIndex = [];
 var listenerWrapperSignIndex = 0;
+// macro-task: script (整体代码)，setTimeout, setInterval, setImmediate, I/O, UI rendering.
+// micro-task: process.nextTick, Promise(原生)，Object.observe，MutationObserver
+// idle观察者 > I/O观察者 > check观察者。
+// idle观察者：process.nextTick
+// I/O观察者：一般性的I/O回调，如网络，文件，数据库I/O等
+// check观察者：setTimeout，setImmediate
+var nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? function (callback) { return new Promise(function () {
+}).then(callback); } : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : function () {
+};
+
 
 /**
  * 查找侦听器在侦听器数组中的索引
@@ -163,7 +174,7 @@ function wrapListenerArgs (listenerArgs, limit) {
       l = listenerArgs.length,
       listenerWrappers = [],
       listener;
-  typeof limit !== 'number' && (limit = Infinity);
+  numberFunctionTypeHash[typeof limit] || (limit = Infinity);
   outer: while (++i < l) {
     listener = listenerArgs[i];
     if (listener) {
@@ -531,7 +542,7 @@ zUtils.assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs);
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              window.setTimeout(function () { return this$1.emitEventPropagation(event); });
+              nextTick(function () { return this$1.emitEventPropagation(event); });
               return event
             }
             i = -1;
@@ -605,8 +616,16 @@ zUtils.assign(EventEmitter.prototype, {
               this$1.removeListener(type, listenerWrapper);
               break
             default:
-              // 若执行次数限制为零，则删除当前侦听器
-              --listenerWrapper.limit || this$1.removeListener(type, listenerWrapper);
+              switch (typeof listenerWrapper.limit) {
+                case 'number':
+                  // 若执行次数限制为零，则删除当前侦听器
+                  --listenerWrapper.limit || this$1.removeListener(type, listenerWrapper);
+                  break
+                case 'function':
+                  // 若执行限制函数为 true
+                  listenerWrapper.limit.call(context, event, response) && this$1.removeListener(type, listenerWrapper);
+                  break
+              }
           }
 
           // 若已终止事件队列后续执行及事件冒泡
