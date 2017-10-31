@@ -1,6 +1,7 @@
 import {arrayForEach, arraySlice, assign, create, uuid} from 'z-utils'
 import Event from './Event'
 
+const numberFunctionTypeHash = {number:!0, function:!0}
 const listenerWrapperSignKey = uuid()
 const listenerWrapperSignRedundantIndex = []
 let listenerWrapperSignIndex = 0
@@ -49,7 +50,7 @@ function wrapListenerArgs (listenerArgs, limit) {
       l = listenerArgs.length,
       listenerWrappers = [],
       listener
-  typeof limit !== 'number' && (limit = Infinity)
+  numberFunctionTypeHash[typeof limit] || (limit = Infinity)
   outer: while (++i < l) {
     listener = listenerArgs[i]
     if (listener) {
@@ -485,8 +486,16 @@ assign(EventEmitter.prototype, {
               this.removeListener(type, listenerWrapper)
               break
             default:
-              // 若执行次数限制为零，则删除当前侦听器
-              --listenerWrapper.limit || this.removeListener(type, listenerWrapper)
+              switch (typeof listenerWrapper.limit) {
+                case 'number':
+                  // 若执行次数限制为零，则删除当前侦听器
+                  --listenerWrapper.limit || this.removeListener(type, listenerWrapper)
+                  break
+                case 'function':
+                  // 若执行限制函数为 true
+                  listenerWrapper.limit.call(context, event) && this.removeListener(type, listenerWrapper)
+                  break
+              }
           }
 
           // 若已终止事件队列后续执行及事件冒泡
