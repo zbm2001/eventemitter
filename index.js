@@ -115,10 +115,10 @@ zUtils.assign(Event, {
   BUBBLING_PHASE: 3
 });
 
-var numberFunctionTypeHash = {number: !0, function: !0};
-var listenerWrapperSignKey = zUtils.uuid();
-var listenerWrapperSignRedundantIndex = [];
-var listenerWrapperSignIndex = 0;
+// https://segmentfault.com/a/1190000008595101
+// https://www.zhihu.com/question/36972010
+// http://www.jianshu.com/p/837b584e1bdd
+// https://segmentfault.com/a/1190000007936922
 // macro-task: script (整体代码)，setTimeout, setInterval, setImmediate, I/O, UI rendering.
 // micro-task: process.nextTick, Promise(原生)，Object.observe，MutationObserver
 // idle观察者 > I/O观察者 > check观察者。
@@ -128,7 +128,10 @@ var listenerWrapperSignIndex = 0;
 var nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? function (callback) { return new Promise(function () {
 }).then(callback); } : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : function () {
 };
-
+var numberFunctionTypeHash = {number: !0, function: !0};
+var listenerWrapperSignKey = zUtils.uuid();
+var listenerWrapperSignRedundantIndex = [];
+var listenerWrapperSignIndex = 0;
 
 /**
  * 查找侦听器在侦听器数组中的索引
