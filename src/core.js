@@ -11,8 +11,7 @@ import Event from './Event'
 // idle观察者：process.nextTick
 // I/O观察者：一般性的I/O回调，如网络，文件，数据库I/O等
 // check观察者：setTimeout，setImmediate
-const nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? (callback) => new Promise(() => {
-}).then(callback) : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : () => {
+const nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? (callback) => Promise.resolve().then(callback) : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : () => {
 }
 const numberFunctionTypeHash = {number: !0, function: !0}
 const listenerWrapperSignKey = uuid()

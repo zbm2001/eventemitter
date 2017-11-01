@@ -125,8 +125,7 @@ zUtils.assign(Event, {
 // idle观察者：process.nextTick
 // I/O观察者：一般性的I/O回调，如网络，文件，数据库I/O等
 // check观察者：setTimeout，setImmediate
-var nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? function (callback) { return new Promise(function () {
-}).then(callback); } : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : function () {
+var nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? function (callback) { return Promise.resolve().then(callback); } : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : function () {
 };
 var numberFunctionTypeHash = {number: !0, function: !0};
 var listenerWrapperSignKey = zUtils.uuid();
