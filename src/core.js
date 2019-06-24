@@ -1,6 +1,7 @@
-import {arrayForEach, arraySlice, assign, create, uuid} from 'z-utils'
+import {uuid} from './utils'
 import Event from './Event'
 
+const arraySlice = Array.prototype.slice
 const listenerWrapperSignKey = uuid()
 const listenerWrapperSignRedundantIndex = []
 let listenerWrapperSignIndex = 0
@@ -94,7 +95,7 @@ function alias (name) {
 export default function EventEmitter () {
 }
 
-assign(EventEmitter.prototype, {
+Object.assign(EventEmitter.prototype, {
 
   _events: null,
 
@@ -538,9 +539,11 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   bind (/*...methodNames*/) {
-    arrayForEach.call(arguments, function (methodName) {
-      typeof this[methodName] === 'function' && (this[methodName] = this[methodName].bind(this))
-    }, this)
+    let l = arguments.length
+    while (--l > -1) {
+      let methodName = arguments[l]
+      if (typeof this[methodName] === 'function') this[methodName] = this[methodName].bind(this)
+    }
     return this
   },
 
@@ -565,7 +568,7 @@ assign(EventEmitter.prototype, {
  * @api private
  */
 export function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
-  let event = create(Event.prototype)
+  let event = Object.create(Event.prototype)
   event.initEvent(type, this, target, bubbles, cancelable)
   event.emitArgs = emitArgs
   returnValue || event.preventDefault()
@@ -581,21 +584,21 @@ export function createEvent (type, target, emitArgs, bubbles, cancelable, return
  */
 export function inherito (constructor, protoProps, staticProps) {
   // 原型继承
-  constructor.prototype = create(this.prototype)
+  constructor.prototype = Object.create(this.prototype)
   // 修复原型构造函数的引用
   constructor.prototype.constructor = constructor
   // 扩展原型成员
-  assign(constructor.prototype, protoProps)
+  Object.assign(constructor.prototype, protoProps)
   // 静态扩展继承方法
   constructor.inherito = inherito
   // 扩展静态成员
-  return assign(constructor, staticProps)
+  return Object.assign(constructor, staticProps)
 }
 
 export {Event}
 
 // 静态成员扩展
-assign(EventEmitter, {
+Object.assign(EventEmitter, {
   inherito,
   Event
 })
