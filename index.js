@@ -1,6 +1,6 @@
 /*
  * @name: @zbm1/eventemitter
- * @version: 1.3.1
+ * @version: 1.3.2
  * @description: javascript EventEmitter
  * @author: zbm2001@aliyun.com
  * @license: Apache 2.0
