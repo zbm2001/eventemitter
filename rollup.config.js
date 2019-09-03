@@ -7,20 +7,31 @@ const commonjs = require('rollup-plugin-commonjs')
 const replace = require('rollup-plugin-replace')
 const pkg = require('./package.json')
 const banner = '/*\n' +
-    'name,version,description,author,license'.split(',')
-        .map((k) => ` * @${k}: ${pkg[k]}`).join('\n') +
-    '\n */'
-const external = Object.keys(pkg.devDependencies)
+  'name,version,description,author,license'.split(',')
+    .map((k) => ` * @${k}: ${pkg[k]}`).join('\n') +
+  '\n */\n'
+const external = Object.keys(pkg.dependencies || {}).concat(Object.keys(pkg.devDependencies))
+// 清除 npm 私有模块前缀，如：@scope/module-name => module-name
+const filename = pkg.name.replace(/^@\S+\//, '')
+// 变量名做驼峰标记法转换，如：module-name => moduleName
+const name = filename.replace(/-([a-z])/g, (m, $1) => $1.toUpperCase())
 
 module.exports = {
-  input: 'src/index.js', // entry -> input
+  input: 'src/index.js',
   plugins: [
-    // resolve({
-    //   jsnext: true,
-    //   main: true,
-    //   browser: true,
-    // }),
-    // commonjs(),
+    resolve({
+      jsnext: true,
+      main: true,
+      browser: true,
+    }),
+    commonjs({
+      // namedExports: {
+      //   // left-hand side can be an absolute path, a path
+      //   // relative to the current directory, or the name
+      //   // of a module in node_modules
+      //   'node_modules/my-lib/index.js': [ 'named' ]
+      // }
+    }),
     // babel 遵循 es2015+ 标准，但执行较慢
     // babel({
     //   exclude: 'node_modules/**'
@@ -31,34 +42,36 @@ module.exports = {
     }),
     replace({
       exclude: 'node_modules/**',
-      ENV: JSON.stringify(process.env.NODE_ENV || 'development')
+      ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
     })
   ],
   external: external,
-  targets: [
+  output: [
     {
-      file: 'index.js', // dest -> file
+      banner,
+      name,
+      file: 'index.js',
       format: 'cjs'
-    }/*, {
-      file: 'EventEmitter.amd.js',
+    }, {
+      banner,
+      name,
+      file: filename + '.amd.js',
       format: 'amd'
     }, {
-      file: 'EventEmitter.cjs.js',
-      format: 'cjs'
-    }, {
-      file: 'EventEmitter.es.js',
+      banner,
+      name,
+      file: filename + '.es.js',
       format: 'es'
     }, {
-      file: 'EventEmitter.iife.js',
+      banner,
+      name,
+      file: filename + '.iife.js',
       format: 'iife'
     }, {
-      file: 'EventEmitter.umd.js',
+      banner,
+      name,
+      file: filename + '.umd.js',
       format: 'umd'
-    }*/
-  ],
-  banner: banner,
-  // format: 'iife', // cjs amd es6 umd iife
-  name: 'EventEmitter' // umd 或 iife 模式下，若入口文件含 export，必须加上该属性 moduleName -> name
-  // file: 'EventEmitter.js', // 输出文件 dest -> file
-  // sourcemap: false   // 调试编译 sourceMap -> sourcemap
+    }
+  ]
 }

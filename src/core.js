@@ -1,19 +1,7 @@
-import {arrayForEach, arraySlice, assign, create, uuid} from 'z-utils'
+import {uuid} from './utils'
 import Event from './Event'
 
-// https://segmentfault.com/a/1190000008595101
-// https://www.zhihu.com/question/36972010
-// http://www.jianshu.com/p/837b584e1bdd
-// https://segmentfault.com/a/1190000007936922
-// macro-task: script (整体代码)，setTimeout, setInterval, setImmediate, I/O, UI rendering.
-// micro-task: process.nextTick, Promise(原生)，Object.observe，MutationObserver
-// idle观察者 > I/O观察者 > check观察者。
-// idle观察者：process.nextTick
-// I/O观察者：一般性的I/O回调，如网络，文件，数据库I/O等
-// check观察者：setTimeout，setImmediate
-const nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? (callback) => Promise.resolve().then(callback) : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : () => {
-}
-const numberFunctionTypeHash = {number: !0, function: !0}
+const arraySlice = Array.prototype.slice
 const listenerWrapperSignKey = uuid()
 const listenerWrapperSignRedundantIndex = []
 let listenerWrapperSignIndex = 0
@@ -62,7 +50,7 @@ function wrapListenerArgs (listenerArgs, limit) {
       l = listenerArgs.length,
       listenerWrappers = [],
       listener
-  numberFunctionTypeHash[typeof limit] || (limit = Infinity)
+  typeof limit !== 'number' && (limit = Infinity)
   outer: while (++i < l) {
     listener = listenerArgs[i]
     if (listener) {
@@ -107,7 +95,7 @@ function alias (name) {
 export default function EventEmitter () {
 }
 
-assign(EventEmitter.prototype, {
+Object.assign(EventEmitter.prototype, {
 
   _events: null,
 
@@ -426,7 +414,7 @@ assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs)
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              nextTick(() => this.emitEventPropagation(event))
+              window.setTimeout(() => this.emitEventPropagation(event))
               return event
             }
             i = -1
@@ -498,16 +486,8 @@ assign(EventEmitter.prototype, {
               this.removeListener(type, listenerWrapper)
               break
             default:
-              switch (typeof listenerWrapper.limit) {
-                case 'number':
-                  // 若执行次数限制为零，则删除当前侦听器
-                  --listenerWrapper.limit || this.removeListener(type, listenerWrapper)
-                  break
-                case 'function':
-                  // 若执行限制函数为 true
-                  listenerWrapper.limit.call(context, event, response) && this.removeListener(type, listenerWrapper)
-                  break
-              }
+              // 若执行次数限制为零，则删除当前侦听器
+              --listenerWrapper.limit || this.removeListener(type, listenerWrapper)
           }
 
           // 若已终止事件队列后续执行及事件冒泡
@@ -559,9 +539,11 @@ assign(EventEmitter.prototype, {
    * @api public
    */
   bind (/*...methodNames*/) {
-    arrayForEach.call(arguments, function (methodName) {
-      typeof this[methodName] === 'function' && (this[methodName] = this[methodName].bind(this))
-    }, this)
+    let l = arguments.length
+    while (--l > -1) {
+      let methodName = arguments[l]
+      if (typeof this[methodName] === 'function') this[methodName] = this[methodName].bind(this)
+    }
     return this
   },
 
@@ -586,7 +568,7 @@ assign(EventEmitter.prototype, {
  * @api private
  */
 export function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
-  let event = create(Event.prototype)
+  let event = Object.create(Event.prototype)
   event.initEvent(type, this, target, bubbles, cancelable)
   event.emitArgs = emitArgs
   returnValue || event.preventDefault()
@@ -602,21 +584,21 @@ export function createEvent (type, target, emitArgs, bubbles, cancelable, return
  */
 export function inherito (constructor, protoProps, staticProps) {
   // 原型继承
-  constructor.prototype = create(this.prototype)
+  constructor.prototype = Object.create(this.prototype)
   // 修复原型构造函数的引用
   constructor.prototype.constructor = constructor
   // 扩展原型成员
-  assign(constructor.prototype, protoProps)
+  Object.assign(constructor.prototype, protoProps)
   // 静态扩展继承方法
   constructor.inherito = inherito
   // 扩展静态成员
-  return assign(constructor, staticProps)
+  return Object.assign(constructor, staticProps)
 }
 
 export {Event}
 
 // 静态成员扩展
-assign(EventEmitter, {
+Object.assign(EventEmitter, {
   inherito,
   Event
 })

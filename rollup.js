@@ -1,60 +1,67 @@
-// 项目下直接命令$ node rollup.js
+// 项目下直接命令$ node rollup.js [cjs[ umd[ amd[ iife[ es]]]]]
+// 可输出命令参数指定的一个或多个引用模式，若未指定命令参数则生成全部引用模式，
 
 const fs = require('fs')
 const rollup = require('rollup')
 const uglifyjs = require('uglify-js')
 const rollupConfig = require('./rollup.config.js')
 const rc = {
-  input: rollupConfig.input, // entry -> input
+  input: rollupConfig.input,
   plugins: rollupConfig.plugins
 }
 
-let targets = rollupConfig.targets ? rollupConfig.targets.map(target => ({
-  format: target.format,
-  file: target.file // dest -> file
-})) : [{
-  format: rollupConfig.format,
-  file: rollupConfig.file // dest -> file
-}]
+let output = rollupConfig.output ? Array.isArray(rollupConfig.output) ? rollupConfig.output : [rollupConfig.output] : []
 
-const noBannerFormats = {'cjs': !0, 'es': !0}
-targets.forEach(function (target) {
-  target.banner = noBannerFormats[target.format] ? '' : this.banner
-  target.name = this.name // moduleName -> name
-  target.sourcemap = this.sourcemap // sourceMap -> sourcemap
-}, rollupConfig)
+// 只输出命令参数指定的一个或多个引用模式，若未指定则输出全部引用模式
+let argv = process.argv.slice(2)
+if (argv.length) {
+  let clearOutput = []
+  let filterOutput = output.filter(o => {
+    if (argv.indexOf(o.format) > -1) return true
+    clearOutput.push(o)
+  })
+  if (filterOutput.length) {
+    output = filterOutput
+    clearOutput.forEach(o => {
+      if(fs.existsSync(o.file)) fs.unlinkSync(o.file)
+    })
+  }
+}
 
 /**
  * JS压缩最小化
- * @param  {String} code JS代码源文本
+ * https://github.com/mishoo/UglifyJS2
+ * @param  {String|Object} code JS代码源文本
  * @return {String} 返回压缩后的代码文本
  */
-function minify (code) {
-  let minifyOptions = {
-    fromString: true
-  }
+function minify(code) {
+  let minifyOptions = {}
   let result = uglifyjs.minify(code, minifyOptions)
+  // console.log('result', result)
   return result.code
 }
 
 rollup.rollup(rc).then(bundle => {
+  const minimize = argv.indexOf('minimize') > -1
 
-  targets.forEach(target => {
-    bundle.generate(target).then(({code, map}) => {
-      // file 生成的目标文件 dest -> file
-      fs.writeFileSync(target.file, code)
+  output.forEach(target => {
+    bundle.generate(target).then(result => {
+      result.output.forEach(({code, fileName, map}) => {
+        // file 生成的目标文件
+        fs.writeFileSync(fileName, code)
 
-      // 若指定压缩最小化文件
-      if (target.minimize) {
-        let minMain = target.file.replace(/(?=\.js$)/, '.min')
-        minMain === target.file && (minMain += '.min')
-        fs.writeFileSync(minMain, target.banner + minify(code))
-      }
+        // 若指定压缩最小化文件
+        if (minimize || target.minimize) {
+          let minFileName = fileName.replace(/(?=\.js$)/, '.min')
+          if (minFileName === fileName) minFileName += '.min'
+          fs.writeFileSync(minFileName, target.banner + minify(code))
+        }
+      })
     })
   })
 
   // bundle写入方式
-  // targets.forEach(bundle.write, bundle)
+  // output.forEach(bundle.write, bundle)
 
 }).catch(e => {
   process.stderr.write(e.message + '\n')

@@ -1,8 +1,46 @@
+/*
+ * @name: z-eventemitter
+ * @version: 1.3.0
+ * @description: javascript EventEmitter
+ * @author: zbm2001@aliyun.com
+ * @license: Apache 2.0
+ */
+
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var zUtils = require('z-utils');
+/**
+ * string of 4 chars
+ * return {String} length{4} 0-9 or a-f 范围内的一个32位十六进制数
+ */
+function S4() {
+  return (((1 + Math.random()) * 0x10000) | 0).toString(16).slice(1)
+}
+
+/**
+ * 生成一个全局唯一标识符
+ * @return {String} length{36} 返回格式为：“xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx” 的字符串
+ */
+function uuid() {
+  return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4())
+}
+
+/**
+ * function allways return false
+ * @return {Boolean} false
+ */
+function returnFalse () {
+  return false
+}
+
+/**
+ * function allways return true
+ * @return {Boolean} true
+ */
+function returnTrue () {
+  return true
+}
 
 /**
  * 事件对象构造器
@@ -13,7 +51,7 @@ var zUtils = require('z-utils');
  */
 function Event () {}
 
-zUtils.assign(Event.prototype, {
+Object.assign(Event.prototype, {
   // 事件类型
   type: '',
   // 捕获阶段
@@ -56,11 +94,11 @@ zUtils.assign(Event.prototype, {
     this.cancelable = !!cancelable;
     if (!this.bubbles) {
       this.cancelBubble = true;
-      this.stopPropagation = zUtils.returnFalse;
-      this.isPropagationStopped = zUtils.returnTrue;
+      this.stopPropagation = returnFalse;
+      this.isPropagationStopped = returnTrue;
     }
     if (!this.cancelable) {
-      this.preventDefault = zUtils.returnFalse;
+      this.preventDefault = returnFalse;
     }
     return this
   },
@@ -71,12 +109,12 @@ zUtils.assign(Event.prototype, {
    * @api public
    */
   preventDefault: function preventDefault () {
-    this.preventDefault = this.isDefaultPrevented = zUtils.returnTrue;
+    this.preventDefault = this.isDefaultPrevented = returnTrue;
     this.returnValue = false;
     return true
   },
 
-  isDefaultPrevented: zUtils.returnFalse,
+  isDefaultPrevented: returnFalse,
 
   /**
    * 阻止事件冒泡
@@ -84,12 +122,12 @@ zUtils.assign(Event.prototype, {
    * @api public
    */
   stopPropagation: function stopPropagation () {
-    this.stopPropagation = this.isPropagationStopped = zUtils.returnTrue;
+    this.stopPropagation = this.isPropagationStopped = returnTrue;
     this.cancelBubble = true;
     return true
   },
 
-  isPropagationStopped: zUtils.returnFalse,
+  isPropagationStopped: returnFalse,
 
   /**
    * 阻止事件冒泡，并且终止当前所在事件队列的后续触发
@@ -98,15 +136,15 @@ zUtils.assign(Event.prototype, {
    */
   stopImmediatePropagation: function stopImmediatePropagation () {
     this.stopPropagation();
-    this.stopImmediatePropagation = this.isImmediatePropagationStopped = zUtils.returnTrue;
+    this.stopImmediatePropagation = this.isImmediatePropagationStopped = returnTrue;
     return true
   },
 
-  isImmediatePropagationStopped: zUtils.returnFalse
+  isImmediatePropagationStopped: returnFalse
 
 });
 
-zUtils.assign(Event, {
+Object.assign(Event, {
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上
@@ -115,20 +153,8 @@ zUtils.assign(Event, {
   BUBBLING_PHASE: 3
 });
 
-// https://segmentfault.com/a/1190000008595101
-// https://www.zhihu.com/question/36972010
-// http://www.jianshu.com/p/837b584e1bdd
-// https://segmentfault.com/a/1190000007936922
-// macro-task: script (整体代码)，setTimeout, setInterval, setImmediate, I/O, UI rendering.
-// micro-task: process.nextTick, Promise(原生)，Object.observe，MutationObserver
-// idle观察者 > I/O观察者 > check观察者。
-// idle观察者：process.nextTick
-// I/O观察者：一般性的I/O回调，如网络，文件，数据库I/O等
-// check观察者：setTimeout，setImmediate
-var nextTick = typeof process === 'object' && process && typeof process.nextTick === 'function' ? process.nextTick : typeof Promise === 'function' ? function (callback) { return Promise.resolve().then(callback); } : typeof setTimeout === 'function' ? setTimeout : typeof setImmediate === 'function' ? setImmediate : function () {
-};
-var numberFunctionTypeHash = {number: !0, function: !0};
-var listenerWrapperSignKey = zUtils.uuid();
+var arraySlice = Array.prototype.slice;
+var listenerWrapperSignKey = uuid();
 var listenerWrapperSignRedundantIndex = [];
 var listenerWrapperSignIndex = 0;
 
@@ -172,11 +198,13 @@ function indexOfListener (listeners, listener) {
  * @api private
  */
 function wrapListenerArgs (listenerArgs, limit) {
+  var obj, obj$1;
+
   var i = -1,
       l = listenerArgs.length,
       listenerWrappers = [],
       listener;
-  numberFunctionTypeHash[typeof limit] || (limit = Infinity);
+  typeof limit !== 'number' && (limit = Infinity);
   outer: while (++i < l) {
     listener = listenerArgs[i];
     if (listener) {
@@ -187,7 +215,6 @@ function wrapListenerArgs (listenerArgs, limit) {
             handleEvent: listener,
             limit: limit
           }, obj[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj ));
-      var obj;
           continue outer
 
         case 'object':
@@ -196,7 +223,6 @@ function wrapListenerArgs (listenerArgs, limit) {
             handleEvent: null,
             limit: limit
           }, obj$1[listenerWrapperSignKey] = listenerWrapperSignRedundantIndex.pop() || ++listenerWrapperSignIndex, obj$1 ));
-      var obj$1;
           continue outer
       }
     }
@@ -221,7 +247,7 @@ function alias (name) {
 function EventEmitter () {
 }
 
-zUtils.assign(EventEmitter.prototype, {
+Object.assign(EventEmitter.prototype, {
 
   _events: null,
 
@@ -245,7 +271,7 @@ zUtils.assign(EventEmitter.prototype, {
         type,
         i,
         listenerWrappers,
-        listenerArgs = zUtils.arraySlice.call(arguments, 1),
+        listenerArgs = arraySlice.call(arguments, 1),
         l = listenerArgs.length;
 
     // 必须至少包含两个参数
@@ -333,7 +359,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addOnceListener: function addOnceListener (evt/*, ...listenerArgs*/) {
-    var listenerArgs = zUtils.arraySlice.call(arguments, 1),
+    var listenerArgs = arraySlice.call(arguments, 1),
         listenerWrappers = wrapListenerArgs(listenerArgs, 1);
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -353,7 +379,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @return {Object} this
    */
   addLimitListener: function addLimitListener (evt, limit/*, ...listenerArgs*/) {
-    var listenerArgs = zUtils.arraySlice.call(arguments, 2),
+    var listenerArgs = arraySlice.call(arguments, 2),
         listenerWrappers = wrapListenerArgs(listenerArgs, limit);
     return this.addListener.apply(this, [evt].concat(listenerWrappers))
     // return this.addListener(evt, ...listenerWrappers)
@@ -373,8 +399,6 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   removeListener: function removeListener (evt/*, ...listenerArgs*/) {
-    var this$1 = this;
-
     var events = this._events,
         types,
         l,
@@ -383,7 +407,7 @@ zUtils.assign(EventEmitter.prototype, {
     if (!evt || !events) {
       return this
     }
-    var listenerArgs = zUtils.arraySlice.call(arguments, 1);
+    var listenerArgs = arraySlice.call(arguments, 1);
 
     switch (typeof evt) {
         // 若为事件名
@@ -419,7 +443,7 @@ zUtils.assign(EventEmitter.prototype, {
     }
     // 若还存在事件队列，直接返回
     for (type in events) {
-      return this$1
+      return this
     }
     // 否则，清除事件对象
     delete this._events;
@@ -470,7 +494,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   addAllListeners: function addAllListeners (/*...listenerArgs*/) {
-    var listenerArgs = zUtils.arraySlice.call(arguments);
+    var listenerArgs = arraySlice.call(arguments);
     return this.addListener.apply(this, ['*'].concat(listenerArgs))
     // return this.addListener('*', ...listenerArgs)
   },
@@ -489,7 +513,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   removeAllListeners: function removeAllListeners (/*...listenerArgs*/) {
-    var listenerArgs = zUtils.arraySlice.call(arguments);
+    var listenerArgs = arraySlice.call(arguments);
     return this.removeListener.apply(this, ['*'].concat(listenerArgs))
     // return this.removeListener('*', ...listenerArgs)
   },
@@ -515,7 +539,6 @@ zUtils.assign(EventEmitter.prototype, {
     var this$1 = this;
 
     var events = this._events,
-        listenerWrappers,
         i,
         l,
         types,
@@ -535,8 +558,8 @@ zUtils.assign(EventEmitter.prototype, {
 
           if (evt === '*') {
             for (type in events) {
-              event = emits.call(this$1, type, events[type], emitArgs);
-              this$1.emitEventPropagation(event);
+              event = emits.call(this, type, events[type], emitArgs);
+              this.emitEventPropagation(event);
             }
           } else {
             types = evt.split(this.eventTypeDelimiter);
@@ -544,14 +567,14 @@ zUtils.assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs);
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              nextTick(function () { return this$1.emitEventPropagation(event); });
+              window.setTimeout(function () { return this$1.emitEventPropagation(event); });
               return event
             }
             i = -1;
             while (++i < l) {
               if (events.hasOwnProperty(types[i])) {
-                event = emits.call(this$1, types[i], events[types[i]], emitArgs);
-                this$1.emitEventPropagation(event);
+                event = emits.call(this, types[i], events[types[i]], emitArgs);
+                this.emitEventPropagation(event);
               }
             }
           }
@@ -562,8 +585,8 @@ zUtils.assign(EventEmitter.prototype, {
           if (typeof evt.test === 'function') {
             for (type in events) {
               if (evt.test(type)) {
-                event = emits.call(this$1, type, events[type], emitArgs);
-                this$1.emitEventPropagation(event);
+                event = emits.call(this, type, events[type], emitArgs);
+                this.emitEventPropagation(event);
               }
             }
           }
@@ -575,8 +598,6 @@ zUtils.assign(EventEmitter.prototype, {
     return event
 
     function emits (type, listenerWrappers, emitArgs) {
-      var this$1 = this;
-
       var listenerWrapper,
           handleEvent,
           context,
@@ -587,7 +608,7 @@ zUtils.assign(EventEmitter.prototype, {
 
       outer: while (listenerWrapper = listenerWrappers[++listenerWrappers.emittingIndex]) {
         // 确定作用域和事件函数
-        context = listenerWrapper.listener || this$1;
+        context = listenerWrapper.listener || this;
 
         if ((handleEvent = listenerWrapper.handleEvent || context.handleEvent)) {
           switch (emitArgs.length) {
@@ -615,19 +636,11 @@ zUtils.assign(EventEmitter.prototype, {
               break outer
               // 返回值为真，则删除当前侦听器，及只执行一次当前事件
             case true:
-              this$1.removeListener(type, listenerWrapper);
+              this.removeListener(type, listenerWrapper);
               break
             default:
-              switch (typeof listenerWrapper.limit) {
-                case 'number':
-                  // 若执行次数限制为零，则删除当前侦听器
-                  --listenerWrapper.limit || this$1.removeListener(type, listenerWrapper);
-                  break
-                case 'function':
-                  // 若执行限制函数为 true
-                  listenerWrapper.limit.call(context, event, response) && this$1.removeListener(type, listenerWrapper);
-                  break
-              }
+              // 若执行次数限制为零，则删除当前侦听器
+              --listenerWrapper.limit || this.removeListener(type, listenerWrapper);
           }
 
           // 若已终止事件队列后续执行及事件冒泡
@@ -667,7 +680,7 @@ zUtils.assign(EventEmitter.prototype, {
    * @api private
    */
   emit: function emit (evt/*, ...emitArgs*/) {
-    var emitArgs = zUtils.arraySlice.call(arguments, 1);
+    var emitArgs = arraySlice.call(arguments, 1);
     return this.emitEvent(evt, this, emitArgs, true, true, true)
   },
 
@@ -679,9 +692,13 @@ zUtils.assign(EventEmitter.prototype, {
    * @api public
    */
   bind: function bind (/*...methodNames*/) {
-    zUtils.arrayForEach.call(arguments, function (methodName) {
-      typeof this[methodName] === 'function' && (this[methodName] = this[methodName].bind(this));
-    }, this);
+    var arguments$1 = arguments;
+
+    var l = arguments.length;
+    while (--l > -1) {
+      var methodName = arguments$1[l];
+      if (typeof this[methodName] === 'function') { this[methodName] = this[methodName].bind(this); }
+    }
     return this
   },
 
@@ -706,7 +723,7 @@ zUtils.assign(EventEmitter.prototype, {
  * @api private
  */
 function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) {
-  var event = zUtils.create(Event.prototype);
+  var event = Object.create(Event.prototype);
   event.initEvent(type, this, target, bubbles, cancelable);
   event.emitArgs = emitArgs;
   returnValue || event.preventDefault();
@@ -722,24 +739,24 @@ function createEvent (type, target, emitArgs, bubbles, cancelable, returnValue) 
  */
 function inherito (constructor, protoProps, staticProps) {
   // 原型继承
-  constructor.prototype = zUtils.create(this.prototype);
+  constructor.prototype = Object.create(this.prototype);
   // 修复原型构造函数的引用
   constructor.prototype.constructor = constructor;
   // 扩展原型成员
-  zUtils.assign(constructor.prototype, protoProps);
+  Object.assign(constructor.prototype, protoProps);
   // 静态扩展继承方法
   constructor.inherito = inherito;
   // 扩展静态成员
-  return zUtils.assign(constructor, staticProps)
+  return Object.assign(constructor, staticProps)
 }
 
 // 静态成员扩展
-zUtils.assign(EventEmitter, {
+Object.assign(EventEmitter, {
   inherito: inherito,
   Event: Event
 });
 
-exports['default'] = EventEmitter;
-exports.createEvent = createEvent;
-exports.inherito = inherito;
 exports.Event = Event;
+exports.createEvent = createEvent;
+exports.default = EventEmitter;
+exports.inherito = inherito;

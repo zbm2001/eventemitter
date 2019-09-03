@@ -1,4 +1,4 @@
-import {assign, returnFalse, returnTrue} from 'z-utils'
+import {returnFalse, returnTrue} from './utils'
 
 /**
  * 事件对象构造器
@@ -9,7 +9,7 @@ import {assign, returnFalse, returnTrue} from 'z-utils'
  */
 export default function Event () {}
 
-assign(Event.prototype, {
+Object.assign(Event.prototype, {
   // 事件类型
   type: '',
   // 捕获阶段
@@ -102,7 +102,7 @@ assign(Event.prototype, {
 
 })
 
-assign(Event, {
+Object.assign(Event, {
   // 捕获阶段
   CAPTURING_PHASE: 1,
   // 在目标组件上上
