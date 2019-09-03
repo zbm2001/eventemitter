@@ -28,7 +28,7 @@ function indexOfListener (listeners, listener) {
 
       case 'object':
         while (i--) {
-          if (listeners[i].listener === listener) {
+          if (listeners[i] === listener || listeners[i].listener === listener) {
             return i;
           }
         }
@@ -414,7 +414,7 @@ Object.assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs)
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              window.setTimeout(() => this.emitEventPropagation(event))
+              setTimeout(() => this.emitEventPropagation(event))
               return event
             }
             i = -1

@@ -1,6 +1,6 @@
 /*
- * @name: z-eventemitter
- * @version: 1.3.0
+ * @name: @zbm1/eventemitter
+ * @version: 1.3.1
  * @description: javascript EventEmitter
  * @author: zbm2001@aliyun.com
  * @license: Apache 2.0
@@ -180,7 +180,7 @@ function indexOfListener (listeners, listener) {
 
       case 'object':
         while (i--) {
-          if (listeners[i].listener === listener) {
+          if (listeners[i] === listener || listeners[i].listener === listener) {
             return i;
           }
         }
@@ -567,7 +567,7 @@ Object.assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs);
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              window.setTimeout(function () { return this$1.emitEventPropagation(event); });
+              setTimeout(function () { return this$1.emitEventPropagation(event); });
               return event
             }
             i = -1;

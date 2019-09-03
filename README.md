@@ -1,11 +1,11 @@
 # utils
 
 ## 安装
-npm i z-EventEmitter
+npm i @zbm1/eventemitter
 
 ## 组件接口
 
-var EM = require('z-EventEmitter');
+var EM = require('@zbm1/eventemitter');
 var em = new EM();
 
 ### em.on('eventName', handleEvent)
