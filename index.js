@@ -158,6 +158,8 @@ var listenerWrapperSignKey = uuid();
 var listenerWrapperSignRedundantIndex = [];
 var listenerWrapperSignIndex = 0;
 
+var REMOVE_LISTENER_EMITS_RETURN_VALUE = listenerWrapperSignKey;
+
 /**
  * 查找侦听器在侦听器数组中的索引
  *
@@ -630,17 +632,17 @@ Object.assign(EventEmitter.prototype, {
               response = handleEvent.apply(context, [event].concat(emitArgs));
           }
 
+          // 若执行次数限制为零，则删除当前侦听器
+          --listenerWrapper.limit || this.removeListener(type, listenerWrapper);
+
           switch (response) {
-              // 返回值为假，就跳出循环，中断后续事件队列的执行
+              // 若返回值为假，就跳出循环，中断后续事件队列的执行
             case false:
               break outer
-              // 返回值为真，则删除当前侦听器，及只执行一次当前事件
-            case true:
-              this.removeListener(type, listenerWrapper);
+              // 若返回值为指定删除的标识，则删除当前侦听器
+            case REMOVE_LISTENER_EMITS_RETURN_VALUE:
+              listenerWrapper.limit && this.removeListener(type, listenerWrapper);
               break
-            default:
-              // 若执行次数限制为零，则删除当前侦听器
-              --listenerWrapper.limit || this.removeListener(type, listenerWrapper);
           }
 
           // 若已终止事件队列后续执行及事件冒泡
@@ -753,10 +755,12 @@ function inherito (constructor, protoProps, staticProps) {
 // 静态成员扩展
 Object.assign(EventEmitter, {
   inherito: inherito,
-  Event: Event
+  Event: Event,
+  REMOVE_LISTENER_EMITS_RETURN_VALUE: REMOVE_LISTENER_EMITS_RETURN_VALUE
 });
 
 exports.Event = Event;
+exports.REMOVE_LISTENER_EMITS_RETURN_VALUE = REMOVE_LISTENER_EMITS_RETURN_VALUE;
 exports.createEvent = createEvent;
 exports.default = EventEmitter;
 exports.inherito = inherito;
