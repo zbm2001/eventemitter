@@ -29,7 +29,9 @@
     "removeListener",
     "off",
     "removeAllListeners",
-    "offAll"
+    "offAll",
+    "注册事件",
+    "事件监听"
   ],
   "author": "zbm2001@aliyun.com",
   "license": "Apache 2.0",

@@ -6,6 +6,8 @@ const listenerWrapperSignKey = uuid()
 const listenerWrapperSignRedundantIndex = []
 let listenerWrapperSignIndex = 0
 
+export const REMOVE_LISTENER_EMITS_RETURN_VALUE = listenerWrapperSignKey
+
 /**
  * 查找侦听器在侦听器数组中的索引
  *
@@ -28,7 +30,7 @@ function indexOfListener (listeners, listener) {
 
       case 'object':
         while (i--) {
-          if (listeners[i].listener === listener) {
+          if (listeners[i] === listener || listeners[i].listener === listener) {
             return i;
           }
         }
@@ -414,7 +416,7 @@ Object.assign(EventEmitter.prototype, {
             if (l < 2 && events.hasOwnProperty(evt)) {
               event = emits.call(this, evt, events[evt], emitArgs)
               // 这里必须确保让实例先执行相关程序，后触发冒泡
-              window.setTimeout(() => this.emitEventPropagation(event))
+              setTimeout(() => this.emitEventPropagation(event))
               return event
             }
             i = -1
@@ -477,17 +479,17 @@ Object.assign(EventEmitter.prototype, {
               response = handleEvent.apply(context, [event].concat(emitArgs))
           }
 
+          // 若执行次数限制为零，则删除当前侦听器
+          --listenerWrapper.limit || this.removeListener(type, listenerWrapper)
+
           switch (response) {
-              // 返回值为假，就跳出循环，中断后续事件队列的执行
+              // 若返回值为假，就跳出循环，中断后续事件队列的执行
             case false:
               break outer
-              // 返回值为真，则删除当前侦听器，及只执行一次当前事件
-            case true:
-              this.removeListener(type, listenerWrapper)
+              // 若返回值为指定删除的标识，则删除当前侦听器
+            case REMOVE_LISTENER_EMITS_RETURN_VALUE:
+              listenerWrapper.limit && this.removeListener(type, listenerWrapper)
               break
-            default:
-              // 若执行次数限制为零，则删除当前侦听器
-              --listenerWrapper.limit || this.removeListener(type, listenerWrapper)
           }
 
           // 若已终止事件队列后续执行及事件冒泡
@@ -600,5 +602,6 @@ export {Event}
 // 静态成员扩展
 Object.assign(EventEmitter, {
   inherito,
-  Event
+  Event,
+  REMOVE_LISTENER_EMITS_RETURN_VALUE
 })
