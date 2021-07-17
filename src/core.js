@@ -1,4 +1,4 @@
-import {uuid} from './utils'
+import uuid from '@zbm1/uuid'
 import Event from './Event'
 
 const arraySlice = Array.prototype.slice

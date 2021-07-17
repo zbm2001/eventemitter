@@ -20,9 +20,7 @@ module.exports = {
   input: 'src/index.js',
   plugins: [
     resolve({
-      jsnext: true,
-      main: true,
-      browser: true,
+      mainFields: ['jsnext', 'main', 'browser']
     }),
     commonjs({
       // namedExports: {
@@ -51,7 +49,8 @@ module.exports = {
       banner,
       name,
       file: 'index.js',
-      format: 'cjs'
+      format: 'cjs',
+      exports: 'named'
     }, {
       banner,
       name,

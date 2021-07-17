@@ -1,6 +1,6 @@
 {
   "name": "@zbm1/eventemitter",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "main": "index.js",
   "description": "javascript EventEmitter",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zbm2001/EventEmitter.git"
+    "url": "git+https://github.com/zbm2001/eventemitter.git"
   },
   "keywords": [
     "EventEmitter",
@@ -36,9 +36,9 @@
   "author": "zbm2001@aliyun.com",
   "license": "Apache 2.0",
   "bugs": {
-    "url": "https://github.com/zbm2001/EventEmitter/issues"
+    "url": "https://github.com/zbm2001/eventemitter/issues"
   },
-  "homepage": "https://github.com/zbm2001/EventEmitter#readme",
+  "homepage": "https://github.com/zbm2001/eventemitter#readme",
   "devDependencies": {
     "@babel/core": "^7.2.2",
     "ink-docstrap": "^1.3.2",
@@ -51,5 +51,8 @@
     "rollup-plugin-replace": "^2.1.0",
     "rollup-plugin-uglify": "^6.0.1",
     "uglify-js": "^3.4.9"
+  },
+  "dependencies": {
+    "@zbm1/uuid": "^0.1.0"
   }
 }
