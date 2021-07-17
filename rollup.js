@@ -4,13 +4,11 @@
 const fs = require('fs')
 const rollup = require('rollup')
 const uglifyjs = require('uglify-js')
-const rollupConfig = require('./rollup.config.js')
-const rc = {
-  input: rollupConfig.input,
-  plugins: rollupConfig.plugins
-}
+let {input, plugins, external, output} = require('./rollup.config.js')
 
-let output = rollupConfig.output ? Array.isArray(rollupConfig.output) ? rollupConfig.output : [rollupConfig.output] : []
+const rc = {input, plugins, external}
+
+output = output ? Array.isArray(output) ? output : [output] : []
 
 // 只输出命令参数指定的一个或多个引用模式，若未指定则输出全部引用模式
 let argv = process.argv.slice(2)
